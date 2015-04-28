@@ -19,7 +19,7 @@ import numpy as np
 import argparse
 
 
-parser = argparse.ArgumentParser(description='Process some integers.')
+parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--access_key')
 parser.add_argument('-s', '--secret_access_key')
 parser.add_argument('-l', '--copy_local', action='store_true')
