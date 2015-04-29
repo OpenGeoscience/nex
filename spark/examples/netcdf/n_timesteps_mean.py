@@ -18,12 +18,17 @@ import functools
 from itertools import izip
 import sys
 import math
+from serial_mean import calculate_means as serial_means
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--master_url', required=True)
 parser.add_argument('-d', '--datafile_path', required=True)
 parser.add_argument('-p', '--parameter', required=True)
 parser.add_argument('-n', '--timesteps', required=True, type=int, help='Number of timesteps to average over')
+parser.add_argument('-v', '--validate', action='store_true')
+parser.add_argument('-s', '--partitions', default=8, type=int)
+parser.add_argument('-c', '--grid_chunk_size', default=2000, type=int)
 
 config = parser.parse_args()
 
@@ -33,9 +38,12 @@ spark_config.set('spark.executor.memory', '2g')
 spark_config.set('spark.driver.maxResultSize', '4g')
 spark_config.set('spark.shuffle.memoryFraction', 0.6)
 spark_config.set('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')
+spark_config.set('spark.kryoserializer.buffer.max.mb', 1024)
 
 # Build up the context, using the master URL
 sc = SparkContext(config.master_url, 'n_timesteps_mean', conf=spark_config)
+
+start = time.time()
 
 data = Dataset(config.datafile_path)
 pr = data.variables[config.parameter]
@@ -49,8 +57,6 @@ num_grid_points = pr[0].size
 
 data.close()
 
-grid_points = range(0, num_grid_points)
-
 # Break timesteps into n size chunks
 timestep_chunks = []
 for x in xrange(0, num_timesteps, config.timesteps):
@@ -59,64 +65,89 @@ for x in xrange(0, num_timesteps, config.timesteps):
     else:
         timestep_chunks.append((x, num_timesteps))
 
-# Now partition locations across the cluster
-grid_points = sc.parallelize(grid_points, 200)
+grid_chunk_size = config.grid_chunk_size
+
+# Break locations into chunks
+grid_chunks = []
+# for x in xrange(0, num_grid_points, grid_chunk_size):
+#     if x + grid_chunk_size < num_grid_points:
+#         grid_chunks.append((x, x + grid_chunk_size))
+#     else:
+#         grid_chunks.append((x, num_grid_points))
+for lat in xrange(0, shape[0], grid_chunk_size):
+    for lon in xrange(0, shape[1], grid_chunk_size):
+        grid_chunks.append((lat, lon))
+
+print 'Grid chunks: %d' % len(grid_chunks)
 
 # Function to process a set of locations for this partition
-def load_locations(points):
+def calculate_means(grid_chunk):
 
     data = Dataset(config.datafile_path)
     pr = data.variables[config.parameter]
-    # Need to cover to list so we can get size
-    locations = list(points)
-    # Setup list for values
-    values = [[np.ma.empty(config.timesteps) for y in xrange(len(timestep_chunks))] for x in xrange(len(locations))]
 
-    timestep_range_index = 0
+    (lat, lon) = grid_chunk
+
+    values = []
     for timestep_range in timestep_chunks:
-        (start, end) = timestep_range
-        for t in range(start, end):
-            step = pr[t]
-            for i in range(0, len(locations)):
-                x = locations[i]
-                lat = (x % pr.shape[1]) - 1
-                lon = (x / pr.shape[1]) - 1
+        (start_timesteps, end_timesteps) = timestep_range
 
-                values[i][timestep_range_index][t-start] = step[lat][lon]
-        timestep_range_index += 1
+        mean = np.mean(pr[start_timesteps:end_timesteps,
+                          lat:lat+grid_chunk_size,
+                          lon:lon+grid_chunk_size], axis=0)
+        values.append(mean)
 
     return values
 
-# Function to calculate mean for a given location across timesteps
-def mean(location_timesteps_chunks):
-    means = []
-    for chunk in location_timesteps_chunks:
-        means.append(np.mean(chunk))
+# Validate parallel result against serial
+def validate(means, datafile_path, parameter, timesteps):
+    serial = serial_means(datafile_path, parameter, timesteps)
 
-    return means
+    valid = True
+    for i in range(len(timestep_chunks)):
+        v1 = serial[i][~serial[i].mask]
+        v2 = timestep_means[i][~timestep_means[i].mask]
+        valid &= np.allclose(v1, v2)
 
-# Load data across cluster
-grid_timesteps = grid_points.mapPartitions(load_locations)
+    if valid:
+        print "Results match serial versions"
+    else:
+        print "Results DO NOT match serial versions!"
 
-# Now calculate the means
-means = grid_timesteps.map(mean)
-means.cache()
+# parallelize the grid
+grid_chunks = sc.parallelize(grid_chunks, config.partitions)
+
+# Now calculate means
+means = grid_chunks.map(calculate_means)
 
 # collect the results
 means = means.collect()
 
-# convert to numpy and reshape
-means = np.ma.asarray(means) #.reshape(shape[0], shape[1], len(timestep_chunks))
+# Now combine the chunks
+timestep_means = [np.ma.empty(shape) for x in range(len(timestep_chunks))]
 
-# print out a sample of unmasked data
-count = 0
-for x in np.nditer(means):
-    if not math.isnan(x):
-        count +=1
+i = 0
+for lat in xrange(0, shape[0], grid_chunk_size):
+    for lon in xrange(0, shape[1], grid_chunk_size):
+        for j in range(len(timestep_chunks)):
+            chunk = means[i][j]
+            timestep_means[j][lat:lat+chunk.shape[0], lon:lon+chunk.shape[1]] = chunk
 
-        if count > 20:
-            break
+        i += 1
 
-        print x
+for m in timestep_means:
+    print(m[~m.mask])
+
+end = time.time()
+
+print "Time: %f" % (end - start)
+
+if config.validate:
+    validate(timestep_means, config.datafile_path, config.parameter, config.timesteps)
+
+
+
+
+
 
 
