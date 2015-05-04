@@ -19,7 +19,9 @@ from itertools import izip
 import sys
 import math
 from serial_mean import calculate_means as serial_means
+from common import write
 import time
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--master_url', required=True)
@@ -29,6 +31,7 @@ parser.add_argument('-n', '--timesteps', required=True, type=int, help='Number o
 parser.add_argument('-v', '--validate', action='store_true')
 parser.add_argument('-s', '--partitions', default=8, type=int)
 parser.add_argument('-c', '--grid_chunk_size', default=2000, type=int)
+parser.add_argument('-o', '--output_path', required=True)
 
 config = parser.parse_args()
 
@@ -43,6 +46,8 @@ spark_config.set('spark.kryoserializer.buffer.max.mb', 1024)
 # Build up the context, using the master URL
 sc = SparkContext(config.master_url, 'n_timesteps_mean', conf=spark_config)
 
+sc.addPyFile(os.path.join(os.path.dirname(__file__),  'common.py'))
+
 start = time.time()
 
 data = Dataset(config.datafile_path)
@@ -54,8 +59,6 @@ num_timesteps = data.variables['time'].size
 # Get number of locations per timestep
 shape = pr[0].shape
 num_grid_points = pr[0].size
-
-data.close()
 
 # Break timesteps into n size chunks
 timestep_chunks = []
@@ -124,7 +127,7 @@ means = grid_chunks.map(calculate_means)
 means = means.collect()
 
 # Now combine the chunks
-timestep_means = [np.ma.empty(shape) for x in range(len(timestep_chunks))]
+timestep_means = np.ma.empty([len(timestep_chunks), shape[0], shape[1]])
 
 i = 0
 for lat in xrange(0, shape[0], grid_chunk_size):
@@ -135,8 +138,13 @@ for lat in xrange(0, shape[0], grid_chunk_size):
 
         i += 1
 
-for m in timestep_means:
-    print(m[~m.mask])
+
+if config.output_path:
+    path = os.path.join(config.output_path, os.path.basename(config.datafile_path).replace('.nc', '_means.nc'))
+    write(path, data, '%s_mean' % config.parameter, timestep_means)
+else:
+    for m in timestep_means:
+        print(m[~m.mask])
 
 end = time.time()
 
