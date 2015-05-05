@@ -1,6 +1,6 @@
 """
- This script calculating means for a parameter at a given location across all
- timesteps, partitioned using lat, lons.
+ This script calculating means for a parameter at a given location across n timesteps,
+ partitioned using lat, lons.
 
  Requires a parameter of the form (time, lat, lon)
 
