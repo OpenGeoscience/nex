@@ -13,6 +13,17 @@ def write(path, source, variable, data):
     output.createDimension('time', len(source.dimensions['time']) if not source.dimensions['time'].isunlimited() else None)
     _copy_variable(output, source, 'lat')
     _copy_variable(output, source, 'lon')
-    output.createVariable(variable, data.dtype, ('time', 'lat', 'lon'))
-    output.variables[variable][:] = data
+
+    if type(data) == list:
+        data_type = data[0].dtype
+    else:
+        data_type = data.dtype
+
+    output.createVariable(variable, data_type, ('time', 'lat', 'lon'))
+
+    if type(data) == list:
+        for i in xrange(len(data)):
+            output.variables[variable][i] = data[i]
+    else:
+        output.variables[variable][:] = data
     output.close()
