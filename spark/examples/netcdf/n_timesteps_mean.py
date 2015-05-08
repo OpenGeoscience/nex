@@ -31,13 +31,13 @@ parser.add_argument('-n', '--timesteps', required=True, type=int, help='Number o
 parser.add_argument('-v', '--validate', action='store_true')
 parser.add_argument('-s', '--partitions', default=8, type=int)
 parser.add_argument('-c', '--grid_chunk_size', default=2000, type=int)
-parser.add_argument('-o', '--output_path', required=True)
+parser.add_argument('-o', '--output_path')
 
 config = parser.parse_args()
 
 spark_config = SparkConf();
 spark_config.set('spark.akka.frameSize', 32)
-spark_config.set('spark.executor.memory', '2g')
+spark_config.set('spark.executor.memory', '4g')
 spark_config.set('spark.driver.maxResultSize', '4g')
 spark_config.set('spark.shuffle.memoryFraction', 0.6)
 spark_config.set('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')
@@ -127,7 +127,7 @@ means = grid_chunks.map(calculate_means)
 means = means.collect()
 
 # Now combine the chunks
-timestep_means = np.ma.empty([len(timestep_chunks), shape[0], shape[1]])
+timestep_means = [np.ma.empty(shape) for x in range(len(timestep_chunks))]
 
 i = 0
 for lat in xrange(0, shape[0], grid_chunk_size):
@@ -152,10 +152,4 @@ print "Time: %f" % (end - start)
 
 if config.validate:
     validate(timestep_means, config.datafile_path, config.parameter, config.timesteps)
-
-
-
-
-
-
 
