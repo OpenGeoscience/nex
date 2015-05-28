@@ -54,16 +54,11 @@ def process_file(file):
         with zipfile.ZipFile(stream, 'r') as zipfd:
             hgt_data = zipfd.read(hgt_file)
             data = read_array(hgt_data)
-            samples = 0
-            sum = 0
-            for x in np.nditer(data):
-                if x != -32768:
-                    samples += 1
-                    sum += x
-
-            # Add the the local results to the global accumulators
-            num_samples_acc.add(samples)
-            sum_acc.add(sum)
+            masked = np.ma.masked_equal(data, -32768)
+            num_samples_acc.add(masked.count())
+            sum = masked.sum()
+            if sum is not np.ma.masked:
+                sum_acc.add(sum)
     except zipfile.BadZipfile:
         # Skip anything thats not a zip
         pass
