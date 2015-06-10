@@ -1,0 +1,21 @@
+{
+    "name": "Calculate N timestep means",
+    "inputs": [{"name": "datafile_path", "type": "string", "format": "text"},
+               {"name": "parameter", "type": "string", "format": "text"},
+               {"name": "timesteps", "type": "number", "format": "number"},
+               {"name": "partitions", "type": "number", "format": "number"},
+               {"name": "grid_chunk_size", "type": "number", "format": "number"},
+               {"name": "output_path", "type": "string", "format": "text"}
+    ],
+    "outputs": [{"name": "runtime", "type": "number", "format": "number"}],
+    "mode": "spark.python",
+    "spark_conf": {
+        "spark.app.name": "n_timestep_means",
+        "spark.akka.frameSize": 32,
+        "spark.executor.memory": "4g",
+        "spark.driver.maxResultSize": "4g",
+        "spark.shuffle.memoryFraction": 0.6,
+        "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+        "spark.kryoserializer.buffer.max.mb": 1024
+    }
+}
