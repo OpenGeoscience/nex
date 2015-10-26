@@ -1,3 +1,4 @@
 docker_spark_cluster/data
 docker_spark_cluster/opt
 *~
+*.avro
