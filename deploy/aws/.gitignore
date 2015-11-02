@@ -6,3 +6,5 @@ tmp.lst
 test.yml
 master
 master.pub
+dev/vagrant.local.yml
+.vagrant/

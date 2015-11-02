@@ -3,3 +3,5 @@
 - Create a folder called ```keys``` and place your AWS IAM account credentials in a file called keys/aws-NEX.pem
 
 - Generate key pair for use by sparkstandalone roles called ```master``` and ```master.pub``` and place them in the ```keys/``` folder
+
+- For local copy netCDF data from aws/1997_files.txt into /data/NEX-GDDP-1997/
