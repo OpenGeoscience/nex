@@ -21,6 +21,33 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <!-- hadoop hdfs components -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+    <!-- hadoop map-reduce components -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+    <!-- hadoop common components -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+    <!-- hadoop aws -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-aws</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+
+
+    <!-- NetCDF CDM -->
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>cdm</artifactId>
@@ -32,5 +59,7 @@
       <artifactId>slf4j-jdk14</artifactId>
       <version>1.7.5</version>
     </dependency>
+
+
   </dependencies>
 </project>
