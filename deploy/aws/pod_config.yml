@@ -70,7 +70,6 @@
                     - head
                     - hdfs
                     - spark
-                    - datanodes
                   volumes:
                     sdb: 50
                     sdc: 100

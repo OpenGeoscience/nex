@@ -10,4 +10,4 @@ IP_ADDR=$(aws --profile NEX ec2 \
               --query Reservations[0].Instances[0].PublicIpAddress \
               --output text)
 
-ssh -i ../keys/kotfic-NEX.pem ubuntu@$IP_ADDR $*
+ssh -i ../keys/aws-NEX.pem ubuntu@$IP_ADDR $*

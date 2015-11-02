@@ -22,13 +22,14 @@
 - hosts: spark
   roles:
     - role: spark-standalone-install
+      ssh_key_exchange_ansible_group: spark
   tags:
     - spark
 
 - hosts: head
   roles:
     - role: spark-standalone-service
-      slave_group: spark-slaves
+      spark_slave_ansible_group: spark-slaves
       state: started
   tags:
     - spark

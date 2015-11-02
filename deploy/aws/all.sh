@@ -6,7 +6,7 @@ SESSION=${1-SESSION_DEFAULT}
 CMD_DEFAULT=""
 CMD=${2-CMD_DEFAULT}
 
-KEYPATH=/home/kotfic/kitware/projects/NEX/keys/kotfic-NEX.pem
+KEYPATH=../keys/aws-NEX.pem
 i=0
 
 tmux kill-session -t NEX

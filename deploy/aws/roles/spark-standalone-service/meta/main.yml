@@ -1,6 +1,0 @@
----
-
-dependencies:
-  - role: spark-standalone-variables
-  - role: spark-standalone-slaves
-  - role: spark-standalone-service-install
