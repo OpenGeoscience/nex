@@ -1,0 +1,3 @@
+[submodule "deploy/gobig"]
+	path = deploy/gobig
+	url = git@github.com:Kitware/gobig.git
