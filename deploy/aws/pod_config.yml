@@ -1,0 +1,88 @@
+---
+
+  - name: set ec2 pod specification
+    set_fact:
+        ec2_pod_spec:
+            key: kotfic-NEX
+            rules:
+              - proto: icmp # ping
+                from_port: -1
+                to_port: -1
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # ssh
+                from_port: 22
+                to_port: 22
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # hdfs namenode
+                from_port: 8020
+                to_port: 8020
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # hdfs datanode
+                from_port: 3888
+                to_port: 3888
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # hdfs namenode webui
+                from_port: 50010
+                to_port: 50010
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # hdfs datanode webui
+                from_port: 50020
+                to_port: 50020
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # webhdfs
+                from_port: 50080
+                to_port: 50080
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp # spark master
+                from_port: 7077
+                to_port: 7077
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp
+                from_port: 50081 # ???
+                to_port: 50081
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp
+                from_port: 8081 # ???
+                to_port: 8081
+                cidr_ip: 0.0.0.0/0
+
+              - proto: tcp
+                from_port: 8888 # ???
+                to_port: 8888
+                cidr_ip: 66.194.253.20/32
+
+              - proto: all
+                group_name: ec2_pod_nex
+
+            hosts:
+                head:
+                  type: c4.2xlarge
+                  groups:
+                    - head
+                    - hdfs
+                    - spark
+                    - datanodes
+                  volumes:
+                    sdb: 50
+                    sdc: 100
+
+                data:
+                  type: c4.2xlarge
+                  count: 15
+                  groups:
+                    - hdfs
+                    - spark
+                    - datanodes
+                    - spark-slaves
+                  volumes:
+                    sdb: 50
+                    sdc: 100

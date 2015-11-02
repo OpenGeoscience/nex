@@ -1,0 +1,129 @@
+- include: instantiate.yml
+- hosts: nex
+  user: ubuntu
+  tasks:
+    - name: update bashrc
+      lineinfile:
+        dest=/home/ubuntu/.bashrc
+        line="{{ item }}"
+      with_items:
+        - "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64"
+        - "export HADOOP_HOME=/opt/hadoop/2.7.1"
+        - "export HADOOP_VERSION=2.7.1"
+        - "export HADOOP_CONF_DIR=/opt/hadoop/2.7.1/etc/hadoop/"
+
+    - name: install tools
+      apt: name={{ item }} state=present update_cache=yes
+      with_items:
+        - parallel
+        - default-jdk
+        - python-pip
+        - python-dev
+        - python-numpy
+        - htop
+        - libhdf5-7
+        - libhdf5-dev
+        - libnetcdf-dev
+        - netcdf-bin
+        - git
+      sudo: yes
+
+    - name: install python packages
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - pssh
+        - netCDF4
+        - xray
+        - py4j
+        - jupyter
+        - ipython[notebook]
+        - ipyparallel
+        - avro
+      sudo: yes
+
+# Intermittent compile errors with pydoop
+# Not currently using so not going to debug
+#     - name: install pydoop
+#       pip:
+#         name: pydoop
+#       environment:
+#         JAVA_HOME: /usr/lib/jvm/java-7-openjdk-amd64
+#         HADOOP_HOME: /opt/hadoop/2.7.1
+#         HADOOP_VERSION: 2.7.1
+#         HADOOP_CONF_DIR: /opt/hadoop/2.7.1/etc/hadoop
+#       sudo: yes
+
+    - name: Add public ssh key to all hosts
+      authorized_key:
+        user: ubuntu
+        key: "{{ lookup('file', '/home/kotfic/kitware/projects/NEX/aws/master.pub') }}"
+
+    - name: Make a temporary directory in /data/
+      file:
+        path: /data/tmp/
+        owner: ubuntu
+        group: ubuntu
+        state: directory
+        mode: 0755
+      sudo: yes
+
+- hosts: head
+  user: ubuntu
+
+  tasks:
+    - name: generate ip.list
+      local_action: command /home/kotfic/kitware/projects/NEX/aws/get_cluster_ips.sh
+
+    - name: install tools
+      apt: name={{ item }} state=present update_cache=yes
+      with_items:
+        - emacs24-nox
+        - links
+        - maven
+      sudo: yes
+
+    - name: install python packages
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - pssh
+      sudo: yes
+
+    - name: copy local files
+      copy:
+        src: "{{ item }}"
+        dest: /home/ubuntu
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+      with_items:
+        - 1997_files.txt
+        - ip.list
+
+    - name: copy ssh config and private key
+      copy:
+        src: "{{ item }}"
+        dest: /home/ubuntu/.ssh/
+        owner: ubuntu
+        group: ubuntu
+        mode: 0600
+      with_items:
+        - master
+        - config
+
+    - name: Add 1997_http_files
+      shell: sed -e "s/s3n:\/\/nasanex\//http:\/\/nasanex.s3.amazonaws.com\//g" /home/ubuntu/1997_files.txt > /home/ubuntu/1997_http_files.txt
+
+
+- hosts: head
+  user: ubuntu
+  roles:
+    - role: pyspark_jupyter_notebook
+  tasks:
+    - name: Checkout git repo
+      git:
+        repo: git@github.com:OpenGeoscience/NEX.git
+        accept_hostkey: True
+        dest: ~/NEX/
+        version: master

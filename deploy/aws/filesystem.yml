@@ -1,0 +1,20 @@
+  - hosts: nex
+    user: ubuntu
+    tasks:
+      - name: filesystems | create
+        filesystem:
+            fstype: ext4
+            dev: /dev/{{ item }}
+        with_items:
+          - xvdb
+          - xvdc
+
+      - name: filesystems | mount
+        mount:
+            fstype: ext4
+            name: "{{ item.value }}"
+            src: /dev/{{ item.key }}
+            state: mounted
+        with_dict:
+            xvdb: /opt
+            xvdc: /data

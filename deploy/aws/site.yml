@@ -1,0 +1,35 @@
+---
+
+- include: instantiate.yml
+- include: filesystem.yml
+
+- hosts: head
+  roles:
+    - role: hadoop-hdfs-namenode
+      hdfs_namenode_ansible_group: head
+      state: started
+  tags:
+    - hdfs
+
+- hosts: datanodes
+  roles:
+    - role: hadoop-hdfs-datanode
+      hdfs_namenode_ansible_group: head
+      state: started
+  tags:
+    - hdfs
+
+- hosts: spark
+  roles:
+    - role: spark-standalone-install
+  tags:
+    - spark
+
+- hosts: head
+  roles:
+    - role: spark-standalone-service
+      slave_group: spark-slaves
+      state: started
+  tags:
+    - spark
+    - test

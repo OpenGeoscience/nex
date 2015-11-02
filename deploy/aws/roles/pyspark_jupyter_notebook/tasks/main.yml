@@ -1,0 +1,33 @@
+---
+
+- name: Create directories
+  file:
+    path: /home/{{ ansible_ssh_user }}/.jupyter/kernels/pyspark/
+    state: directory
+    mode: 0755
+
+- name: Copy notebook config
+  template:
+    src: jupyter_notebook_config.py.j2
+    dest: /home/{{ ansible_ssh_user }}/.jupyter/jupyter_notebook_config.py
+
+- name: Copy pyspark kernel config
+  template:
+    src: kernel.json.j2
+    dest: /home/{{ ansible_ssh_user }}/.jupyter/kernels/pyspark/kernel.json
+
+- name: Install pyspark kernel
+  become: false
+  shell: jupyter kernelspec install --replace /home/{{ ansible_ssh_user }}/.jupyter/kernels/pyspark
+  sudo: yes
+
+
+# - name: Set up ipython profile
+#   shell: ipython profile create --parallel pyspark
+#
+# # - debug: var=hostvars
+#
+# - name: Copy ipcluster config
+#   template:
+#     src: ipcluster_config.py.j2
+#     dest: ~/.ipython/profile_pyspark/ipcluster_config.py
