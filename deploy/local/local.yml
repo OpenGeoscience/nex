@@ -45,7 +45,7 @@
     - name: Add public ssh key to all hosts
       authorized_key:
         user: vagrant
-        key: "{{ lookup('file', '/home/kotfic/kitware/projects/NEX/aws/master.pub') }}"
+        key: "{{ lookup('file', '../keys/master.pub') }}"
 
 #     - name: Make a temporary directory in /data/
 #       file:
@@ -97,7 +97,7 @@
         group: "{{ ansible_ssh_user }}"
         mode: 0600
       with_items:
-        - master
+        - ../keys/master
         - config
 
 #     - name: Add 1997_http_files
