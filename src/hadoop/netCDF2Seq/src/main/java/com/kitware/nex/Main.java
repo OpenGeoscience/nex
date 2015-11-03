@@ -1,5 +1,7 @@
 package com.kitware.nex;
 
+import opendap.dap.NoSuchVariableException;
+import org.apache.directory.api.util.ByteBuffer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -35,16 +37,16 @@ public class Main
         log(arg + e.getMessage());
     }
 
-    public static void main( String[] args ) throws IOException, InvalidRangeException
+    public static void main( String[] args ) throws IOException, InvalidRangeException, NoSuchVariableException
     {
-        String uri = args[0];
+        String src_uri = args[0];
+        String dest_uri = args[1];
 
         Configuration conf = new Configuration();
 
-        FileSystem fs = FileSystem.get(URI.create(uri), conf);
+        FileSystem src_fs = FileSystem.get(URI.create(src_uri), conf);
+        FileSystem dest_fs = FileSystem.get(URI.create(dest_uri), conf);
 
-
-        class FloatArrayWritable extends ArrayWritable{ public FloatArrayWritable() { super(FloatWritable.class); } }
 
         SequenceFile.Writer writer = null;
         NetcdfFile ncfile = null;
@@ -52,19 +54,44 @@ public class Main
         LongWritable key = new LongWritable();
         ArrayPrimitiveWritable value = new ArrayPrimitiveWritable();
 
-        Path hdfs_path = new Path("/user/nex/pr_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.seq");
-        FSDataOutputStream out = fs.create(hdfs_path, true);
+        Path src_path = new Path(src_uri);
+        Path dest_path = new Path(dest_uri);
 
-        String local_filename = "/data/tmp/pr_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc";
+        // Read the Source data into src_data
+        FSDataInputStream in = src_fs.open(src_path);
+
+        byte[] src_data = org.apache.commons.io.IOUtils.toByteArray(in);
+      //   int length  = in.readInt();
+      //  byte[] src_data = new byte[length];
+      //  in.read(src_data);
+       // in.close();
+
+        // Setup the output stream
+        FSDataOutputStream out = dest_fs.create(dest_path, true);
+
+        // String local_filename = "/data/tmp/pr_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc";
 
 
         try {
+            ncfile = NetcdfFile.openInMemory("tmp.nc", src_data);
+
+            Variable var = null;
+
+            for(Variable v: ncfile.getVariables()){
+                if( v.getShortName().equals("pr")){ var = v; break; }
+                if( v.getShortName().equals("tasmin")){ var = v; break; }
+                if( v.getShortName().equals("tasmax")){ var = v; break; }
+            }
+
+            if( var == null) throw new NoSuchVariableException("Could not find pr, tasmin, or tasmax");
+
+
             writer = SequenceFile.createWriter( conf,
                         SequenceFile.Writer.stream(out),
                         SequenceFile.Writer.keyClass(key.getClass()),
                         SequenceFile.Writer.valueClass(value.getClass()));
 
-            ncfile = NetcdfFile.open(local_filename);
+
 
             // The dimention we want to serialize across
             Variable time_var = ncfile.findVariable("time");
@@ -81,17 +108,16 @@ public class Main
 */
             int[] origin = new int[3];
 
-            Variable pr = ncfile.findVariable("pr");
-            int[] prShape = pr.getShape();
+            int[] varShape = var.getShape();
 
-            int[] size = new int[] {1, prShape[1], prShape[2]};
-            for ( int i = 0; i <  prShape[0];  i++){
+            int[] size = new int[] {1, varShape[1], varShape[2]};
+            for ( int i = 0; i <  varShape[0];  i++){
                 origin[0] = i;
 
                 // CalendarDate t_step = date_converter.makeCalendarDate(time_values.getDouble(i));
                 key.set(time_values.getLong(i));
 
-                value.set((float[]) pr.read(origin, size).reduce(0).getStorage());
+                value.set((float[]) var.read(origin, size).reduce(0).getStorage());
                 
                 writer.append(key, value);
                 // log(key.toString());
@@ -100,7 +126,7 @@ public class Main
             }
 
         } catch (IOException ioe) {
-            Main.log("trying to open " + local_filename, ioe);
+            Main.log("trying to open " + src_uri, ioe);
         } finally {
 
             IOUtils.closeStream(writer);
@@ -108,7 +134,7 @@ public class Main
             if (ncfile != null) try {
                 ncfile.close();
             } catch (IOException ioe) {
-                Main.log("trying to close " + local_filename, ioe);
+                Main.log("trying to close " + src_uri, ioe);
             }
         }
     }
