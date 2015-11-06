@@ -12,7 +12,7 @@
         name: nex
         state: running
         region: us-west-2
-        default_image: ami-5189a661
+        default_image: ami-e0f7e081
         rules: "{{ ec2_pod_spec.rules }}"
         hosts: "{{ ec2_pod_spec.hosts }}"
 
