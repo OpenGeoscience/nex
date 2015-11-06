@@ -1,0 +1,28 @@
+- include: instantiate.yml
+
+- hosts: head
+  user: ubuntu
+  tasks:
+    - name: Download 1997 files
+      shell: "parallel --slf /home/ubuntu/ip.list --joblog /data/tmp/log -a /home/ubuntu/1997_http_files.txt wget -P /data/tmp/ {} && touch /data/tmp/.done"
+      args:
+        creates: /data/tmp/.download_done
+
+- hosts: datanodes
+  user: ubuntu
+  tasks:
+    - name: Copy netCDF2Seq script
+      copy:
+        src: "{{ item }}"
+        dest: /home/ubuntu/
+        owner: ubuntu
+        group: ubuntu
+        mode: 0755
+      with_items:
+        - "netCDF2Seq.sh"
+        - "netCDF2Seq.jar"
+
+    - name: Import into HDFS
+      shell: "/home/ubuntu/netCDF2Seq.sh && touch /data/tmp/.hdfs_import_done"
+      args:
+        creates: /data/tmp/.hdfs_import_done
