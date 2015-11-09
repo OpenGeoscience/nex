@@ -4,8 +4,8 @@
   tasks:
     - name: update bashrc
       lineinfile:
-        dest=/home/ubuntu/.bashrc
-        line="{{ item }}"
+        dest: /home/ubuntu/.bashrc
+        line: "{{ item }}"
       with_items:
         - "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64"
         - "export HADOOP_HOME=/opt/hadoop/2.7.1"
@@ -17,6 +17,7 @@
       with_items:
         - parallel
         - default-jdk
+        - openjdk-7-source
         - python-pip
         - python-dev
         - python-numpy
@@ -82,6 +83,36 @@
         - links
         - maven
       sudo: yes
+
+    - name: Get scala 2.11.4
+      get_url:
+        url: "http://downloads.typesafe.com/scala/2.11.4/scala-2.11.4.deb"
+        dest: /home/ubuntu/src/
+
+
+
+    - name: Install scala Deb
+      apt:
+        deb: /home/{{ ansible_env.USER }}/src/scala-2.11.4.deb
+      sudo: true
+
+    - name: Set up SBT source
+      shell: "echo \"deb https://dl.bintray.com/sbt/debian /\" | sudo tee -a /etc/apt/sources.list.d/sbt.list"
+      sudo: yes
+
+    - name: Add SBT key
+      shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823"
+      sudo: yes
+
+    - name: Install SBT
+      shell: "apt-get update && apt-get install sbt"
+      sudo: yes
+
+    - name: Setup ensime plugin
+      lineinfile:
+        line: "addSbtPlugin(\"org.ensime\" % \"ensime-sbt\" % \"0.2.1\")"
+        dest: /home/ubuntu/.sbt/0.13/plugins/plugins.sbt
+        create: yes
 
     - name: install python packages
       pip:
