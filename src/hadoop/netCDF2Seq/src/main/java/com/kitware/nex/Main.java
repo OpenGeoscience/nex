@@ -37,8 +37,7 @@ public class Main
         log(arg + e.getMessage());
     }
 
-    public static void main( String[] args ) throws IOException, InvalidRangeException, NoSuchVariableException
-    {
+    public static void main( String[] args ) throws Exception {
         String src_uri = args[0];
         String dest_uri = args[1];
 
@@ -51,7 +50,7 @@ public class Main
         SequenceFile.Writer writer = null;
         NetcdfFile ncfile = null;
 
-        LongWritable key = new LongWritable();
+        DateTimeWritable key = new DateTimeWritable();
         ArrayPrimitiveWritable value = new ArrayPrimitiveWritable();
 
         Path src_path = new Path(src_uri);
@@ -97,7 +96,7 @@ public class Main
             Variable time_var = ncfile.findVariable("time");
             Array time_values = time_var.read();
 
-/*  Date conversion stuff
+            //  Date conversion stuff
             DateUnit date_converter = null;
             try {
                 date_converter = new DateUnit(time_var.getUnitsString());
@@ -105,7 +104,7 @@ public class Main
                 log(String.format("Could not convert %s", time_var.getUnitsString()), e);
                 System.exit(1);
             }
-*/
+
             int[] origin = new int[3];
 
             int[] varShape = var.getShape();
@@ -114,8 +113,9 @@ public class Main
             for ( int i = 0; i <  varShape[0];  i++){
                 origin[0] = i;
 
-                // CalendarDate t_step = date_converter.makeCalendarDate(time_values.getDouble(i));
-                key.set(time_values.getLong(i));
+                CalendarDate t_step = date_converter.makeCalendarDate(time_values.getDouble(i));
+
+                key.set(t_step.toDate());
 
                 value.set((float[]) var.read(origin, size).reduce(0).getStorage());
                 
