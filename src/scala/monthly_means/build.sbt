@@ -9,5 +9,7 @@ resolvers += "UNIDATA Release" at "https://artifacts.unidata.ucar.edu/content/re
 
 libraryDependencies ++= Seq(
   "edu.ucar" % "cdm" % "4.6.3",
+  "org.apache.spark" % "spark-core_2.10" % "1.5.1" % "provided",
+  "org.apache.hadoop" % "hadoop-client" % "2.7.1" % "provided",
   "org.slf4j" % "slf4j-jdk14" % "1.7.5"
 )
