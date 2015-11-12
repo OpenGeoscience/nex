@@ -8,6 +8,18 @@
       args:
         creates: /data/tmp/.download_done
 
+    # Need this for spark-shell - to access DateTimeWriteable
+    - name: Copy netCDF2Seq jar
+      copy:
+        src: "{{ item }}"
+        dest: /home/ubuntu/
+        owner: ubuntu
+        group: ubuntu
+        mode: 0755
+      with_items:
+        - "netCDF2Seq.jar"
+
+
 - hosts: datanodes
   user: ubuntu
   tasks:

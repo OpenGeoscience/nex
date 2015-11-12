@@ -23,6 +23,8 @@
   roles:
     - role: spark-standalone-install
       ssh_key_exchange_ansible_group: spark
+      spark_executor_memory: "12G"
+      spark_driver_memory: "12G"
   tags:
     - spark
 

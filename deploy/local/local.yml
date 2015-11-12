@@ -73,8 +73,9 @@
       sudo: yes
 
     - name: Get scala 2.11.4
-      get_url: http://downloads.typesafe.com/scala/2.11.4/scala-2.11.4.deb
-      dest: /home/ubuntu/src/
+      get_url:
+        url: "http://downloads.typesafe.com/scala/2.11.4/scala-2.11.4.deb"
+        dest: /home/vagrant/src/
 
     - name: Install scala Deb
       apt:
@@ -96,7 +97,7 @@
     - name: Setup ensime plugin
       lineinfile:
         line: "addSbtPlugin(\"org.ensime\" % \"ensime-sbt\" % \"0.2.1\")"
-        dest: /home/ubuntu/.sbt/0.13/plugins/plugins.sbt
+        dest: /home/vagrant/.sbt/0.13/plugins/plugins.sbt
         create: yes
 
     - name: install python packages
