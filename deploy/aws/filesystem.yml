@@ -7,7 +7,6 @@
             dev: /dev/{{ item }}
         with_items:
           - xvdb
-          - xvdc
 
       - name: filesystems | mount
         mount:
@@ -16,5 +15,4 @@
             src: /dev/{{ item.key }}
             state: mounted
         with_dict:
-            xvdb: /opt
-            xvdc: /data
+            xvdb: /data
