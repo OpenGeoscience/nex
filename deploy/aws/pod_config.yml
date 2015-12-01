@@ -77,7 +77,6 @@
               data:
                 type: c4.2xlarge
                 count: 16
-#                image: ami-e4041685
                 groups:
                   - hdfs
                   - spark

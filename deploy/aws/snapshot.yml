@@ -1,0 +1,158 @@
+- include: instantiate.yml
+
+# ec2_vol (and some others)  do not seem to accept
+# these being set as environment variables
+- hosts: localhost
+  name: Collect AWS keys from environment
+  tasks:
+    - set_fact: snapshot_tag="{{lookup('pipe', 'date +%Y%m%dT%H%M') }}"
+    - set_fact: aws_access_key="{{ lookup('pipe', 'echo $AWS_ACCESS_KEY_ID') }}"
+    - set_fact: aws_secret_key="{{ lookup('pipe', 'echo AWS_SECRET_ACCESS_KEY') }}"
+
+
+- hosts: datanodes
+  name: Select an Example Datanode
+  user: ubuntu
+  tasks:
+    - name: Gather facts
+      action: ec2_facts
+
+    - add_host:
+        name: "{{ hostvars[groups['datanodes'][0]]['ansible_ec2_public_ipv4'] }}"
+        groups: "example_datanode"
+
+- hosts: example_datanode
+  name: Prep Example Datanode state for snapshot
+  tasks:
+
+    - name: Disable HDFS
+      become: yes
+      service:
+        name: hdfs-datanode
+        state: stopped
+
+    - name: Probe /opt/spark
+      stat:
+        path: /opt/spark
+      register: spark
+
+    - name: Disable Spark
+      become_user: spark
+      shell: "/opt/spark/1.5.1/sbin/stop-slave.sh"
+      when: spark.stat.isdir is defined and spark.stat.isdir
+
+    - name: Unmount /data
+      become: yes
+      mount:
+        name: /data
+        src: /dev/xvdc
+        fstype: ext4
+        state: unmounted
+
+    - name: Remove /data from fstab
+      become: yes
+      mount:
+        name: /data
+        src: /dev/xvdc
+        fstype: ext4
+        state: absent
+
+
+- hosts: example_datanode
+  name: Detatch Volumes & Snapshot Root
+  tasks:
+
+    - name: Gather facts
+      action: ec2_facts
+
+    - name: Get Volumes
+      ec2_vol:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        instance: "{{ ansible_ec2_instance_id }}"
+        region: "{{ ansible_ec2_placement_region }}"
+        state: list
+      register: datanode_volumes
+
+    - name: Get Datanode /data volume
+      set_fact:
+        datanode_data_volume: "{{ item }}"
+      when: item['attachment_set']['device'] | match("/dev/sdb")
+      with_items: datanode_volumes.volumes
+
+    - name: Get Datanode Root volume
+      set_fact:
+        datanode_root_volume: "{{ item }}"
+      when: item['attachment_set']['device'] | match("/dev/sda1")
+      with_items: datanode_volumes.volumes
+
+    - name: Detach /data volume
+      ec2_vol:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        id: "{{ datanode_data_volume['id'] }}"
+        instance: None
+        region: "{{ ansible_ec2_placement_region }}"
+      when: datanode_data_volume is defined
+
+    - name: Take snapshot of Root volume
+      ec2_snapshot:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        description: "datanode_root_snapshot_{{ hostvars['localhost']['snapshot_tag'] }}"
+        volume_id: "{{ datanode_root_volume['id'] }}"
+        region: "{{ ansible_ec2_placement_region }}"
+      register: datanode_root_snapshot
+
+    - name: Tag Root Volume Snapshot
+      ec2_tag:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        region: "{{ ansible_ec2_placement_region }}"
+        resource: "{{ datanode_root_snapshot['snapshot_id'] }}"
+        state: present
+        tags:
+          Name: "datanode_root_snapshot_{{ hostvars['localhost']['snapshot_tag'] }}"
+
+
+
+################################################################
+##                          Scratch
+##
+
+
+# First datanode instance ID
+      # hostvars[groups['datanodes'][0]]["ansible_ec2_instance_id"]
+
+      # Root device => "/dev/sda1"
+      # hostvars[groups['datanodes'][0]]["ansible_ec2_block_device_mapping_root"]
+
+
+      #"ansible_ec2_block_device_mapping_ebs2": "sdc",
+      #"ansible_ec2_block_device_mapping_ebs1": "sdb",
+
+#       "ansible_mounts": [{
+#               "uuid": "",
+#               "size_total": 105545592832,
+#               "mount": "/",
+#               "size_available": 99347951616,
+#               "fstype": "ext4",
+#               "device": "/dev/xvda1",
+#               "options": "rw"
+#       }, {
+#               "uuid": "",
+#               "size_total": 52710469632,
+#               "mount": "/opt",
+#               "size_available": 48982474752,
+#               "fstype": "ext4",
+#               "device": "/dev/xvdb",
+#               "options": "rw"
+#       }, {
+#               "uuid": "",
+#               "size_total": 105555197952,
+#               "mount": "/data",
+#               "size_available": 100107124736,
+#               "fstype": "ext4",
+#               "device": "/dev/xvdc",
+#               "options": "rw"
+#       }]
