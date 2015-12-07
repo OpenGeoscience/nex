@@ -12,20 +12,15 @@
 
 ## AWS Deployment
 
-- place your AWS IAM account credentials in a file called keys/aws-NEX.pem
+- place your AWS IAM key-file in a file called keys/aws-NEX.pem
 
 - Make sure ```AWS_ACCESS_KEY_ID``` and ```AWS_SECRET_ACCESS_KEY``` are set as environment variables
-
 
 - To deploy and provision cluster defined in ```pod_config.yml```  run ```ansible-playbook -b site.yml```
 
 - To set up libraries and development environment run ```ansible-playbook local.yml``` after running ```ansible-playbook -b site.yml```
 
-- To download files from 1997 run the following command:
-  ```parallel --slf <(cat /home/ubuntu/ip.list | sed -e 's/^/1\//g') --joblog /data/tmp/log -a /home/ubuntu/1997_http_files.txt wget --timeout=10 -P /data/tmp/ {}```
-  (Should take around 60 to 70 seconds)
-
-
+- To download, convert and import NEX-GDDP data from 1997 into the running hdfs server run ```ansible-playbook import.yml```  (Note this may take some time, e.g., ~10 to 15 minutes)
 
 ## Notes
 
