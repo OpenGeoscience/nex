@@ -10,6 +10,104 @@
     - set_fact: aws_secret_key="{{ lookup('pipe', 'echo AWS_SECRET_ACCESS_KEY') }}"
 
 
+
+- hosts: head
+  name: Prep Headnode state for snapshot
+  tasks:
+
+    - name: Disable HDFS
+      become: yes
+      service:
+        name: hdfs-namenode
+        state: stopped
+
+    - name: Probe /opt/spark
+      stat:
+        path: /opt/spark
+      register: spark
+
+    - name: Disable Spark
+      become_user: spark
+      shell: "/opt/spark/1.5.1/sbin/stop-all.sh"
+      when: spark.stat.isdir is defined and spark.stat.isdir
+
+    - name: Unmount /data
+      become: yes
+      mount:
+        name: /data
+        src: /dev/xvdb
+        fstype: ext4
+        state: unmounted
+
+    - name: Remove /data from fstab
+      become: yes
+      mount:
+        name: /data
+        src: /dev/xvdb
+        fstype: ext4
+        state: absent
+
+
+- hosts: head
+  name: Detatch Volumes & Snapshot Root
+  tasks:
+
+    - name: Gather facts
+      action: ec2_facts
+
+    - name: Get Volumes
+      ec2_vol:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        instance: "{{ ansible_ec2_instance_id }}"
+        region: "{{ ansible_ec2_placement_region }}"
+        state: list
+      register: volumes
+
+    - name: Get Headnode /data volume
+      set_fact:
+        data_volume: "{{ item }}"
+      when: item['attachment_set']['device'] | match("/dev/sdb")
+      with_items: volumes.volumes
+
+    - name: Get Headnode Root volume
+      set_fact:
+        root_volume: "{{ item }}"
+      when: item['attachment_set']['device'] | match("/dev/sda1")
+      with_items: volumes.volumes
+
+    - name: Detach /data volume
+      ec2_vol:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        id: "{{ data_volume['id'] }}"
+        instance: None
+        region: "{{ ansible_ec2_placement_region }}"
+      when: data_volume is defined
+
+    - name: Take snapshot of Root volume
+      ec2_snapshot:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        description: "head_root_snapshot_{{ hostvars['localhost']['snapshot_tag'] }}"
+        volume_id: "{{ root_volume['id'] }}"
+        region: "{{ ansible_ec2_placement_region }}"
+      register: root_snapshot
+
+    - name: Tag Root Volume Snapshot
+      ec2_tag:
+        aws_access_key: "{{ hostvars['localhost']['aws_access_key'] }}"
+        aws_secret_key: "{{ hostvars['localhost']['aws_secret_key'] }}"
+        region: "{{ ansible_ec2_placement_region }}"
+        resource: "{{ root_snapshot['snapshot_id'] }}"
+        state: present
+        tags:
+          Name: "head_root_snapshot_{{ hostvars['localhost']['snapshot_tag'] }}"
+
+
+
+
+
 - hosts: datanodes
   name: Select an Example Datanode
   user: ubuntu
@@ -45,7 +143,7 @@
       become: yes
       mount:
         name: /data
-        src: /dev/xvdc
+        src: /dev/xvdb
         fstype: ext4
         state: unmounted
 
@@ -53,7 +151,7 @@
       become: yes
       mount:
         name: /data
-        src: /dev/xvdc
+        src: /dev/xvdb
         fstype: ext4
         state: absent
 
@@ -72,19 +170,19 @@
         instance: "{{ ansible_ec2_instance_id }}"
         region: "{{ ansible_ec2_placement_region }}"
         state: list
-      register: datanode_volumes
+      register: volumes
 
     - name: Get Datanode /data volume
       set_fact:
         datanode_data_volume: "{{ item }}"
       when: item['attachment_set']['device'] | match("/dev/sdb")
-      with_items: datanode_volumes.volumes
+      with_items: volumes.volumes
 
     - name: Get Datanode Root volume
       set_fact:
         datanode_root_volume: "{{ item }}"
       when: item['attachment_set']['device'] | match("/dev/sda1")
-      with_items: datanode_volumes.volumes
+      with_items: volumes.volumes
 
     - name: Detach /data volume
       ec2_vol:
@@ -113,46 +211,3 @@
         state: present
         tags:
           Name: "datanode_root_snapshot_{{ hostvars['localhost']['snapshot_tag'] }}"
-
-
-
-################################################################
-##                          Scratch
-##
-
-
-# First datanode instance ID
-      # hostvars[groups['datanodes'][0]]["ansible_ec2_instance_id"]
-
-      # Root device => "/dev/sda1"
-      # hostvars[groups['datanodes'][0]]["ansible_ec2_block_device_mapping_root"]
-
-
-      #"ansible_ec2_block_device_mapping_ebs2": "sdc",
-      #"ansible_ec2_block_device_mapping_ebs1": "sdb",
-
-#       "ansible_mounts": [{
-#               "uuid": "",
-#               "size_total": 105545592832,
-#               "mount": "/",
-#               "size_available": 99347951616,
-#               "fstype": "ext4",
-#               "device": "/dev/xvda1",
-#               "options": "rw"
-#       }, {
-#               "uuid": "",
-#               "size_total": 52710469632,
-#               "mount": "/opt",
-#               "size_available": 48982474752,
-#               "fstype": "ext4",
-#               "device": "/dev/xvdb",
-#               "options": "rw"
-#       }, {
-#               "uuid": "",
-#               "size_total": 105555197952,
-#               "mount": "/data",
-#               "size_available": 100107124736,
-#               "fstype": "ext4",
-#               "device": "/dev/xvdc",
-#               "options": "rw"
-#       }]
