@@ -48,21 +48,21 @@
         user: vagrant
         key: "{{ lookup('file', '../keys/master.pub') }}"
 
-#     - name: Make a temporary directory in /data/
-#       file:
-#         path: /data/tmp/
-#         owner: vagrant
-#         group: vagrant
-#         state: directory
-#         mode: 0755
-#       sudo: yes
+    - name: Make a temporary directory in /data/
+      file:
+        path: /data/tmp/
+        owner: vagrant
+        group: vagrant
+        state: directory
+        mode: 0755
+      sudo: yes
 
 - hosts: head
   user: vagrant
 
   tasks:
-#    - name: generate ip.list
-#      local_action: command /home/kotfic/kitware/projects/NEX/aws/get_cluster_ips.sh
+   - name: generate ip.list
+     local_action: command /home/kotfic/kitware/projects/NEX/aws/get_cluster_ips.sh
 
     - name: install tools
       apt: name={{ item }} state=present update_cache=yes
@@ -107,16 +107,16 @@
         - pssh
       sudo: yes
 
-#     - name: copy local files
-#       copy:
-#         src: "{{ item }}"
-#         dest: /home/ubuntu
-#         owner: ubuntu
-#         group: ubuntu
-#         mode: 0644
-#       with_items:
-#         - 1997_files.txt
-#         - ip.list
+    - name: copy local files
+      copy:
+        src: "{{ item }}"
+        dest: /home/ubuntu
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+      with_items:
+        - 1997_files.txt
+        - ip.list
 
     - name: copy ssh config and private key
       copy:
@@ -129,8 +129,8 @@
         - ../keys/master
         - config
 
-#     - name: Add 1997_http_files
-#       shell: sed -e "s/s3n:\/\/nasanex\//http:\/\/nasanex.s3.amazonaws.com\//g" /home/ubuntu/1997_files.txt > /home/ubuntu/1997_http_files.txt
+    - name: Add 1997_http_files
+      shell: sed -e "s/s3n:\/\/nasanex\//http:\/\/nasanex.s3.amazonaws.com\//g" /home/ubuntu/1997_files.txt > /home/ubuntu/1997_http_files.txt
 
 
 - hosts: head
@@ -139,10 +139,10 @@
     - role: pyspark_jupyter_notebook
   tags:
     - debug
-#   tasks:
-#     - name: Checkout git repo
-#       git:
-#         repo: git@github.com:OpenGeoscience/NEX.git
-#         accept_hostkey: True
-#         dest: /home/{{ ansible_ssh_user }}/NEX/
-#         version: master
+  tasks:
+    - name: Checkout git repo
+      git:
+        repo: git@github.com:OpenGeoscience/NEX.git
+        accept_hostkey: True
+        dest: /home/{{ ansible_ssh_user }}/NEX/
+        version: master

@@ -66,13 +66,12 @@
             hosts:
               head:
                 type: c4.2xlarge
-                image: ami-6a01130b
                 groups:
                   - head
                   - hdfs
                   - spark
                 volumes:
-                  sdb: 100
+                  sdb: 1000
 
               data:
                 type: c4.2xlarge
@@ -83,4 +82,4 @@
                   - datanodes
                   - spark-slaves
                 volumes:
-                  sdb: 100
+                  sdb: 1000

@@ -9,7 +9,7 @@
     roles:
       - role: ec2-pod
         default_ssh_key: "{{ ec2_pod_spec.key }}"
-        name: nex
+        name: kotfic_nex
         state: running
         region: us-west-2
         default_image: ami-e0f7e081
