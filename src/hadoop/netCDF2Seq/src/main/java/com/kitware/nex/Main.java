@@ -19,7 +19,7 @@ import ucar.nc2.units.DateUnit;
 
 import java.io.IOException;
 import java.net.URI;
-
+import java.util.Map;
 // import static ucar.nc2.NCdumpW.printArray;
 
 /**
@@ -42,7 +42,14 @@ public class Main
         String dest_uri = args[1];
 
         Configuration conf = new Configuration();
+        conf.set("dfs.replication", "1");
+        /*
+        for (Map.Entry<String, String> entry : conf) {
+            System.out.println(entry.getKey() + " = " + entry.getValue());
+        }
 
+        System.exit(0);
+        */
         FileSystem src_fs = FileSystem.get(URI.create(src_uri), conf);
         FileSystem dest_fs = FileSystem.get(URI.create(dest_uri), conf);
 
@@ -118,7 +125,7 @@ public class Main
                 key.set(t_step.toDate());
 
                 value.set((float[]) var.read(origin, size).reduce(0).getStorage());
-                
+
                 writer.append(key, value);
                 // log(key.toString());
                 // printArray(data2D,"pr", System.out, null);
