@@ -129,6 +129,7 @@
         group: ubuntu
         mode: 0644
       with_items:
+        - all_files.txt
         - 1997_files.txt
         - ip.list
 

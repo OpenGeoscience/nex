@@ -67,6 +67,7 @@
               head:
                 type: c4.2xlarge
                 groups:
+                  - nex
                   - head
                   - hdfs
                   - spark
@@ -77,6 +78,7 @@
                 type: c4.2xlarge
                 count: 16
                 groups:
+                  - nex
                   - hdfs
                   - spark
                   - datanodes
