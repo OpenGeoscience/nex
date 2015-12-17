@@ -12,5 +12,6 @@ libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-core_2.10" % "1.5.1" % "provided",
   "org.apache.hadoop" % "hadoop-client" % "2.7.1" % "provided",
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.4.4",
-  "org.slf4j" % "slf4j-jdk14" % "1.7.5"
+  "org.slf4j" % "slf4j-jdk14" % "1.7.5",
+  "net.sf.opencsv" % "opencsv" % "2.3"
 )
