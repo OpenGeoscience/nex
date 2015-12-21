@@ -1,0 +1,14 @@
+- include: instantiate.yml
+
+- hosts: head
+  sudo: yes
+  tasks:
+    - shell: cat /home/hdfs/.ssh/id_rsa.pub
+      register: hdfs_public_key
+
+- hosts: datanodes
+  sudo: yes
+  tasks:
+    - authorized_key:
+        user: hdfs
+        key: "{{ hostvars[groups['head'][0]]['hdfs_public_key'].stdout }}"

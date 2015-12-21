@@ -1,0 +1,17 @@
+- include: instantiate.yml
+
+- hosts: head
+  roles:
+    - role: hadoop-hdfs-namenode
+      hdfs_namenode_ansible_group: head
+      state: restarted
+  tags:
+    - hdfs
+
+- hosts: datanodes
+  roles:
+    - role: hadoop-hdfs-datanode
+      hdfs_namenode_ansible_group: head
+      state: restarted
+  tags:
+    - hdfs
