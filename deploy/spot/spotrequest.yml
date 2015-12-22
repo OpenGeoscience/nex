@@ -1,0 +1,75 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: launch head
+      ec2:
+        exact_count: 1
+        instance_tags:
+          Name: "Spot master"
+          spot_type: master
+          spot: all
+        count_tag:
+          spot_type: master
+        image: ami-5189a661
+        instance_type: m4.large
+        key_name: kotfic-NEX
+        profile: NEX
+        region: us-west-2
+        wait: true
+      register: master
+
+    - debug: msg="{{ master }}"
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        group: ec2_tag_spot_type_master, ec2_tag_spot_all
+      with_items: master.instances + master.tagged_instances
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_ip}}"
+        port: 22
+        delay: 20
+        timeout: 320
+        state: started
+      with_items: master.instances + master.tagged_instances
+
+
+    - name: launch spot
+      ec2:
+        exact_count: 3
+        instance_tags:
+          Name: "Spot Test"
+          spot_type: worker
+          spot: all
+        count_tag:
+          spot_type: worker
+        image: ami-5189a661
+        instance_type: m4.large
+        key_name: kotfic-NEX
+        profile: NEX
+        spot_price: 0.015
+        spot_wait_timeout: 600
+        region: us-west-2
+        wait: true
+      register: spots
+
+    - debug: msg="{{ spots }}"
+
+    - name: Add new instances to worker group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        group: ec2_tag_spot_type_worker, ec2_tag_spot_all
+      with_items: spots.instances + spots.tagged_instances
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_ip }}"
+        port: 22
+        delay: 20
+        timeout: 320
+        state: started
+      with_items: spots.instances + spots.tagged_instances
+
+    - debug: msg="{{ groups }}"
