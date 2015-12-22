@@ -6,8 +6,6 @@ import org.apache.hadoop.io._
 import com.kitware.nex.DateTimeWritable
 import org.apache.hadoop.conf.Configuration
 
-
-
 import scala.collection.JavaConversions._
 import java.io.FileWriter
 import java.io.BufferedWriter
@@ -27,9 +25,11 @@ object Main {
 
     val hdfs_root = new Configuration().get("fs.defaultFS")
 
+// val seq = sc.sequenceFile[DateTimeWritable, ArrayPrimitiveWritable](hdfs_root + "/user/nex/pr_day_BCSD_historical_r1i1p1_MIROC-ESM_1980.seq").map{ case (k, v) => (k.get(), v.get().asInstanceOf[Array[Float]])}
+
     val seq = sc.sequenceFile[DateTimeWritable, ArrayPrimitiveWritable](hdfs_root + "/user/nex/" + args(0) + "*.seq").map{ case (k, v) => (k.get(), v.get().asInstanceOf[Array[Float]])}
 
-    val rdd = seq.map{ case (k, v) => ((k.getYear(), k.getMonthOfYear()) , v.sum / v.length) }
+    val rdd = seq.map{ case (k, v) => ((k.getYear(), k.getMonthOfYear()) , v.filter(_ != 1E20.toFloat).sum / v.filter(_ != 1E20.toFloat).length) }
 
     val agg = rdd.aggregateByKey((0.0, 0))( (acc, v) => (acc._1 + v, acc._2 + 1),
       (acc1, acc2) => (acc1._1 + acc2._1, acc1._2 + acc2._2))
