@@ -25,6 +25,10 @@
       ssh_key_exchange_ansible_group: spark
       spark_executor_memory: "12G"
       spark_driver_memory: "12G"
+      spark_eventlog_enabled: true
+      spark_eventlog_dir: "hdfs://{{ hostvars['head']['ansible_nodename'] }}:8020/user/spark/logs"
+      spark_history_fs_logdirectory: "hdfs://{{ hostvars['head']['ansible_nodename'] }}:8020/user/spark/logs"
+
   tags:
     - spark
 

@@ -61,7 +61,7 @@
                 cidr_ip: 66.194.253.20/32
 
               - proto: all
-                group_name: ec2_pod_nex
+                group_name: ec2_pod_kotfic_nex
 
             hosts:
               head:
@@ -84,4 +84,4 @@
                   - datanodes
                   - spark-slaves
                 volumes:
-                  sdb: 1000
+                  sdb: 3000

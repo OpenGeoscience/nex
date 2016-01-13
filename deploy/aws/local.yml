@@ -27,6 +27,10 @@
         - libnetcdf-dev
         - netcdf-bin
         - git
+        - libblas-dev
+        - liblapack-dev
+        - libatlas-base-dev
+        - gfortran
       sudo: yes
 
     - name: install python packages
@@ -41,6 +45,8 @@
         - ipython[notebook]
         - ipyparallel
         - avro
+        - matplotlib
+        - seaborn
       sudo: yes
 
 # Intermittent compile errors with pydoop
@@ -82,6 +88,8 @@
         - emacs24-nox
         - links
         - maven
+        - libfreetype6-dev
+        - libpng-dev
       sudo: yes
 
     - name: Get scala 2.11.4
