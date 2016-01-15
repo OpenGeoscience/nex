@@ -1,0 +1,8 @@
+---
+
+dependencies:
+  - role: git-cache
+    repo: git://github.com/kitware/minerva.git
+    version: "{{ minerva_version }}"
+    variable_prefix: minerva
+    state: present

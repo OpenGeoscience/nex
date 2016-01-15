@@ -25,3 +25,8 @@
 ## Notes
 
 - Use ```pssh -h ~/ip.list -i [command]``` to run a shell command on all datanodes
+
+
+## Minerva
+
+- ```minerva``` folder intended for development of NEX variant of minerva

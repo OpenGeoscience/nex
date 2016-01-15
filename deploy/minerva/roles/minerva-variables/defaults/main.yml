@@ -1,0 +1,14 @@
+---
+    girder_venv_root: ""
+
+    minerva_version: master
+    minerva_install_root: ""
+    minerva_data_root: ""
+
+    minerva_user: girder
+    minerva_group: girder
+
+    minerva_crypt_pass: ""
+    minerva_net_interface: eth0
+
+    state: started

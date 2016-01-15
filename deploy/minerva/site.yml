@@ -1,0 +1,23 @@
+---
+- name: Deploy Mongodb
+  hosts: mongo
+  become: yes
+  roles:
+    - role: mongodb
+      state: started
+
+- name: Deploy girder
+  hosts: girder
+  become: yes
+  vars:
+    girder_venv_root: "/opt/girder/libs"
+  roles:
+    - role: girder
+      mongodb_ansible_group: mongo
+      girder_version: "v1.4.1"
+      state: started
+
+    - role: minerva
+      state: started
+      tags:
+        - minerva
