@@ -30,11 +30,19 @@
         dest: ~/.emacs.d
       become: no
 
+    - name: copy ssh keys so we can commit to github
+      copy:
+        src: ~/.ssh/id_rsa
+        dest: ~/.ssh/id_rsa
+        mode: 0600
+      become: no
+
+
 - name: Gather facts
   hosts: tag_group_celery_perftest
   become: yes
   tags:
-    - nfs
+    - always
   tasks:
     - name: Gather ec2 facts
       action: ec2_facts
@@ -42,6 +50,8 @@
 - name: Configure master
   hosts: tag_Name_celery_master
   become: yes
+  vars:
+    master_url: "{{ hostvars[groups['tag_Name_celery_master'][0]]['ec2_dns_name'] }}"
   tags:
     - nfs
     - nfs_master
@@ -69,6 +79,25 @@
       service:
         name: nfs-kernel-server
         state: started
+
+    - name: checkout NEX repo
+      git:
+        repo: git@github.com:OpenGeoscience/nex.git
+        dest: /public/nex
+        accept_hostkey: true
+      become: no
+      tags:
+        - celery
+
+    - name: template out celery master config
+      shell: >-
+        echo "{{ master_url }}" > perftest/.master_hostname
+      args:
+        chdir: /public/nex/experimental/celery_performance/
+      become: no
+      tags:
+        - test
+
 
 - name: Configure workers
   hosts: tag_Name_celery_worker
@@ -98,3 +127,15 @@
         src: "{{ master_url }}:/public"
         fstype: nfs
         state: mounted
+
+
+- name: Gather facts
+  hosts: tag_group_celery_perftest
+  become: yes
+  tags:
+    - celery
+  tasks:
+    - name: install requirements
+      pip:
+        chdir: /public/nex/experimental/celery_performance/
+        requirements: requirements.txt
