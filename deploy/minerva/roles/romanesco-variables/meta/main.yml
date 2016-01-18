@@ -6,5 +6,5 @@ dependencies:
     version: "{{ romanesco_version }}"
     variable_prefix: romanesco
     state: present
-  - role: nodejs-variables
 
+#  - role: nodejs-variables

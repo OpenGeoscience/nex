@@ -1,10 +1,20 @@
 ---
-- name: Deploy Mongodb
+- name: Deploy mongodb
   hosts: mongo
   become: yes
   roles:
     - role: mongodb
       state: started
+
+- name: Deploy rabbitmq
+  hosts: rabbitmq
+  become: yes
+  roles:
+    - role: rabbitmq
+      state: started
+  tags:
+    - romanesco
+    - cumulus
 
 - name: Deploy girder
   hosts: girder
@@ -16,6 +26,14 @@
       mongodb_ansible_group: mongo
       girder_version: "v1.4.1"
       state: started
+
+    - role: romanesco
+      rabbitmq_ansible_group: rabbitmq
+      romanesco_version: "cfdc285fd2d94"
+      do_install_girder: true
+      state: started
+      tags:
+        - romanesco
 
     - role: minerva
       state: started

@@ -1,44 +1,9 @@
 ---
-
-  - name: apt | cache | update
-    apt: update_cache=yes
-    when: do_install|bool
-
   - name: romanesco | deps | install
     apt: name={{ item }} state=present update_cache=yes
     with_items:
-      - apt-utils
-      - autoconf
-      - build-essential
-      - curl
-      - cmake
-      - g++
-      - gfortran
-      - git
-      - gzip
-      - libbz2-dev
-      - libcppunit-dev
-      - libexpat-dev
-      - libffi-dev
-      - libjpeg-dev
-      - libpng-dev
-      - libsqlite-dev
-      - libssl-dev
-      - libtool
-      - m4
-      - make
-      - ncurses-dev
-      - openjdk-7-jdk
-      - openjdk-7-jre-headless
-      - openssh-client
-      - openssh-server
       - python-pip
-      - python-software-properties
       - python2.7-dev
-      - rsync
-      - sudo
-      - tar
-      - wget
     when: do_install|bool
 
   - name: romanesco | service | stop
@@ -63,37 +28,49 @@
   - name: romanesco | install parent | create
     file:
         path: "{{ romanesco_install_parent }}"
+        owner: "{{ romanesco_user }}"
+        group: "{{ romanesco_group }}"
         state: directory
     when: do_install|bool
 
   - name: romanesco | data root | create
     file:
         path: "{{ romanesco_data_root }}"
+        owner: "{{ romanesco_user }}"
+        group: "{{ romanesco_group }}"
         state: directory
-        mode: 0755
     when: do_install|bool
 
-  - name: romanesco | data root | owner | set
+  - name: romanesco | install root | create
     file:
         path: "{{ romanesco_data_root }}"
         state: directory
+        owner: "{{ romanesco_user }}"
+        group: "{{ romanesco_group }}"
+    when: do_install|bool
+
+
+  - name: romanesco | install root | owner | set
+    file:
+        path: "{{ romanesco_install_root }}"
+        state: directory
         group: "{{ romanesco_group }}"
         owner: "{{ romanesco_user }}"
-        mode: 0775
     when: do_install|bool
 
   - name: romanesco | repo | sync
     command: >
         rsync -avz --exclude=.git
         "{{ romanesco_git_work_dir }}/"
-        "{{ romanesco_install_root }}"
+        "{{ romanesco_install_root }}/"
+    become: yes
+    become_user: "{{ romanesco_user }}"
     when: do_install|bool
 
   - name: pip
     pip: requirements={{ romanesco_install_root }}/{{ item }}
     with_items:
       - requirements.txt
-      - romanesco/plugins/girder_io/requirements.txt
     when: do_install|bool
 
   - name: romanesco | script | service | generate
@@ -108,7 +85,6 @@
         recurse: yes
         path: "{{ romanesco_install_root }}"
         group: "{{ romanesco_group }}"
-        mode: 0755
         owner: "{{ romanesco_user }}"
     when: do_install|bool
 
@@ -119,3 +95,8 @@
         mode: 0644
     when: do_install|bool
 
+  - name: romanesco | install | girder plugin
+    shell: ". {{ girder_venv_root }}/bin/activate && girder-install plugin -s -f {{romanesco_install_root}}"
+    when: do_install_girder|bool
+    become: yes
+    become_user: "{{ girder_user }}"

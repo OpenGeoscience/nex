@@ -1,5 +1,4 @@
 ---
-
   - name: romanesco | service | logic flags | compute
     set_fact:
         remove_data_root: "{{ state == 'absent' }}"
@@ -15,7 +14,7 @@
 
   - name: romanesco | install root | default | set
     set_fact:
-        romanesco_install_root: /opt/romanesco/{{ romanesco_git_version }}
+        romanesco_install_root: /opt/romanesco/{{ romanesco_git_version }}/romanesco
     when: romanesco_install_root == ""
 
   - name: romanesco | install root | parent | probe
@@ -66,4 +65,3 @@
         do_initialization: >
             {{ (do_install|bool) and
                 (not (initialized_probe.stat.exists|bool)) }}
-
