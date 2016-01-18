@@ -15,7 +15,7 @@
 
   - name: minerva | install root | default | set
     set_fact:
-        minerva_install_root: /opt/minerva/{{ minerva_git_version }}
+        minerva_install_root: /opt/minerva/{{ minerva_git_version }}/minerva
     when: minerva_install_root == ""
 
 
