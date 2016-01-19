@@ -35,6 +35,13 @@
       tags:
         - romanesco
 
+    - role: cumulus
+      cumulus_version: "ansible-refactor"
+      do_girder_install: true
+      state: started
+      tags:
+        - cumulus
+
     - role: minerva
       state: started
       tags:

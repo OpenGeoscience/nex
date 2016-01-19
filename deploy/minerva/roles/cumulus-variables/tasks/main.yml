@@ -1,0 +1,64 @@
+---
+
+  - name: cumulus | service | logic flags | compute
+    set_fact:
+        remove_data_root: "{{ state == 'absent' }}"
+        remove_install_root: "{{ state == 'absent' }}"
+        stop_services: "{{ state == 'absent' }}"
+        do_install: >
+            {{ state == "present" or state == "stopped" or
+               state == "started" or state == "restarted" or
+               state == "reloaded" }}
+        notify_services: >
+            {{ state == "stopped" or state == "started" or
+               state == "restarted" or state == "reloaded" }}
+
+  - name: cumulus | install root | default | set
+    set_fact:
+        cumulus_install_root: /opt/cumulus/{{ cumulus_git_version }}/cumulus
+    when: cumulus_install_root == ""
+
+  - name: cumulus | plugin root | default | set
+    set_fact:
+      cumulus_plugin_root: "{{ cumulus_install_root }}/girder/cumulus"
+    when: cumulus_plugin_root == ""
+
+
+  - name: cumulus | install root | parent | probe
+    shell: dirname "{{ cumulus_install_root }}"
+    register: parent_probe
+
+  - name: cumulus | install root | parent | record
+    set_fact:
+        cumulus_install_parent: "{{ parent_probe.stdout }}"
+
+  - name: cumulus | data root | default | set
+    set_fact:
+        cumulus_data_root: /data/cumulus/{{ cumulus_git_version }}
+    when: cumulus_data_root == ""
+
+  - name: cumulus | keys directory | default | set
+    set_fact:
+      cumulus_keys_directory: "{{ cumulus_data_root }}/keys"
+
+  - name: cumulus | install root | probe
+    stat:
+        path: "{{ cumulus_install_root }}"
+    register: install_root_probe
+
+  - name: cumulus | install root | flag | record
+    set_fact:
+        create_install_root: >
+            {{ (do_install|bool) and
+                (not (install_root_probe.stat.exists|bool)) }}
+
+  - name: cumulus | initialized | probe
+    stat:
+        path: "{{ cumulus_data_root }}/.initialized"
+    register: initialized_probe
+
+  - name: cumulus | initialized | flag | record
+    set_fact:
+        do_initialization: >
+            {{ (do_install|bool) and
+                (not (initialized_probe.stat.exists|bool)) }}

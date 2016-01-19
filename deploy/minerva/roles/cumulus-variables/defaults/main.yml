@@ -1,0 +1,19 @@
+---
+    girder_venv_root: ""
+
+    cumulus_version: master
+    cumulus_install_root: ""
+    cumulus_plugin_root: ""
+    cumulus_data_root: ""
+
+    cumulus_plugin_user: girder
+    cumulus_plugin_group: girder
+
+    cumulus_keys_directory: ""
+
+    do_girder_install: false
+
+    celery_user: romanesco
+    celery_group: romanesco
+
+    state: started
