@@ -44,6 +44,8 @@ Vagrant.configure(2) do |config|
 
   end
 
+
+  config.vm.synced_folder "../../src/cumulus_frontend", "/opt/cumulus_frontend/", owner: 1003, group: 1003
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provision "ansible" do |ansible|
