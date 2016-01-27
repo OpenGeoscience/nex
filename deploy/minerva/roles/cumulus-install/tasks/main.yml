@@ -61,7 +61,7 @@
   - name: cumulus | create config.json
     template:
       src: config.json.j2
-      dest: "{{cumulus_install_root}}/config/config.json"
+      dest: "{{cumulus_install_root}}/cumulus/conf/config.json"
       mode: 0640
       owner: "{{ celery_user }}"
       group: "{{ celery_group }}"

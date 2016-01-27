@@ -5,6 +5,8 @@
   roles:
     - role: mongodb
       state: started
+  tags:
+    - mongo
 
 - name: Deploy rabbitmq
   hosts: rabbitmq
@@ -24,7 +26,8 @@
   roles:
     - role: girder
       mongodb_ansible_group: mongo
-      girder_version: "v1.4.1"
+#      girder_version: "v1.4.1"
+      girder_version: "master"
       state: started
 
     - role: romanesco
@@ -44,5 +47,8 @@
 
     - role: minerva
       state: started
+      minerva_version: "master"
       tags:
         - minerva
+
+# TODO: add cumulus/cumulus user/group
