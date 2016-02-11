@@ -56,7 +56,8 @@ Vagrant.configure(2) do |config|
     }
 
     ansible.extra_vars = {
-      default_user: "vagrant"
+      default_user: "vagrant",
+      girder_port: host_port
     }
     ansible.verbose = "-vv"
     ansible.tags = "config"

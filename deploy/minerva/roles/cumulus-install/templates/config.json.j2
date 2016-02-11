@@ -1,6 +1,6 @@
 {
     "girder": {
-        "baseUrl": "http://{{local_hostname.stdout if inventory_hostname == 'hpccloud' else {{ ansible_default_ipv4['address'] }}}}:9080/api/v1",
+        "baseUrl": "http://{{local_hostname.stdout if inventory_hostname == 'hpccloud' else {{ ansible_default_ipv4['address'] }}}}:{{ girder_port }}/api/v1",
         "user": "cumulus",
         "group": "cumulus"
     },

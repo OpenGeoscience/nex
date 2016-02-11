@@ -23,6 +23,7 @@
   become: yes
   vars:
     girder_venv_root: "/opt/girder/libs"
+    girder_port: "{{ girder_port|default(8080) }}"
   roles:
     - role: girder
       mongodb_ansible_group: mongo
@@ -64,6 +65,8 @@
 
 - name: Configure girder
   hosts: girder
+  vars:
+    girder_port: "{{ girder_port|default(8080) }}"
   tags:
     - config
   tasks:
@@ -77,7 +80,7 @@
     - name: Create 'admin' User
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         user:
           firstName: "Admin"
           lastName: "User"
@@ -90,7 +93,7 @@
     - name: Create 'cumulus' User
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         username: "admin"
         password: "letmein"
         user:
@@ -104,7 +107,7 @@
     - name: Create cumulus group with cumulus user
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         username: "admin"
         password: "letmein"
         group:
@@ -118,7 +121,7 @@
     - name: Create filesystem assetstore
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         username: "admin"
         password: "letmein"
         assetstore:
@@ -131,7 +134,7 @@
     - name: Ensure minerva, cumulus, romanesco and cumulus_frontend plugins are enabled
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         username: "admin"
         password: "letmein"
         plugins:
@@ -144,7 +147,7 @@
     - name: Restart the server
       girder:
         host: "{{ ansible_default_ipv4['address'] }}"
-        port: 9080
+        port: "{{ girder_port }}"
         username: "admin"
         password: "letmein"
         put:
