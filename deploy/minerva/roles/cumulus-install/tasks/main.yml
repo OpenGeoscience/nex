@@ -41,7 +41,7 @@
       state: directory
       group: "{{ celery_group }}"
       owner: "{{ celery_user }}"
-      mode: 0755
+      mode: 0775
     when: do_install|bool
 
   - name: cumulus | repo | sync

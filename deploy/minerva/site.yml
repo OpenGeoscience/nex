@@ -41,6 +41,8 @@
 
     - role: cumulus
       cumulus_version: "ansible-refactor"
+      celery_user: girder
+      celery_group: romanesco
       do_girder_install: true
       state: started
       tags:
@@ -51,11 +53,12 @@
       minerva_version: "cumulus-frontend-integration"
       tags:
         - minerva
+        - config
 
   tasks:
     - name: cumulus_frontend | install | plugin
       shell: >
-        . {{ girder_venv_root }}/bin/activate
+        . {{ girder_venv_root }}/bin/activate &&
         girder-install plugin -s -f {{ minerva_install_root }}/plugins/cumulus_frontend
       become: yes
       become_user: girder

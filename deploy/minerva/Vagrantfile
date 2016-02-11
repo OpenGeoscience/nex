@@ -12,8 +12,9 @@ Vagrant.configure(2) do |config|
   end
 
   host_port = ENV["GIRDER_HOST_PORT"] || 8080
+  guest_port = ENV["GIRDER_GUEST_PORT"] || host_port
 
-  config.vm.network "forwarded_port", guest: 9080, host: host_port
+  config.vm.network "forwarded_port", guest: guest_port, host: host_port
 
   config.vm.define "minerva" do |node| end
 
@@ -59,8 +60,8 @@ Vagrant.configure(2) do |config|
       default_user: "vagrant",
       girder_port: host_port
     }
-    ansible.verbose = "-vv"
     ansible.tags = "config"
+    ansible.verbose = "-vv"
     ansible.playbook = "site.yml"
   end
 end
