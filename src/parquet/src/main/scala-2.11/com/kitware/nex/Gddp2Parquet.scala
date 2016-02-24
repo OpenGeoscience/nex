@@ -9,7 +9,6 @@ import org.apache.parquet.avro.AvroParquetWriter
 import ucar.nc2.units.DateUnit
 import ucar.nc2.{NetcdfFile, Variable}
 
-
 import scala.util.Try
 
 import collection.JavaConversions._
@@ -117,8 +116,7 @@ object Gddp2Parquet {
     var origin = Array(0, 0, 0)
     val size = Array(1, shape._2, shape._3)
 
-    //for(t_step <- 1 to shape._1 ){
-    for (t_step <- 1 until 2) {
+    for(t_step <- 1 until shape._1 ){
       val pr_chunk = pr.read(origin, size).reduce.copyToNDJavaArray().asInstanceOf[Array[Array[Float]]]
       val tasmin_chunk = tasmin.read(origin, size).reduce.copyToNDJavaArray().asInstanceOf[Array[Array[Float]]]
       val tasmax_chunk = tasmax.read(origin, size).reduce.copyToNDJavaArray().asInstanceOf[Array[Array[Float]]]
