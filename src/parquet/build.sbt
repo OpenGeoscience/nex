@@ -21,8 +21,8 @@ libraryDependencies ++= Seq(
 
   "org.apache.avro" % "avro" % "1.7.6",
 
-  "org.apache.hadoop" % "hadoop-common" % "2.7.1",
-  "org.apache.hadoop" % "hadoop-hdfs" % "2.7.1",
+  ("org.apache.hadoop" % "hadoop-common" % "2.3.0"),
+  //"org.apache.hadoop" % "hadoop-hdfs" % "2.7.1",
 
   "org.apache.parquet" % "parquet-common" % parquet_version,
   "org.apache.parquet" % "parquet-encoding" % parquet_version,
@@ -33,3 +33,10 @@ libraryDependencies ++= Seq(
   "org.apache.parquet" % "parquet-avro" % parquet_version
 )
 
+assemblyShadeRules in assembly := Seq(
+  ShadeRule.rename("org.apache.commons.beanutils.**" -> "shadedstuff.beanutils.@1").inLibrary("commons-beanutils" % "commons-beanutils" % "1.7.0"),
+  ShadeRule.rename("org.apache.commons.collections.**" -> "shadedstuff.collections.@1").inLibrary("commons-beanutils" % "commons-beanutils" % "1.7.0"),
+  ShadeRule.rename("org.apache.commons.collections.**" -> "shadedstuff2.collections.@1").inLibrary("commons-beanutils" % "commons-beanutils-core" % "1.8.0")
+)
+
+mainClass in assembly := Some("com.kitware.nex.Gddp2Parquet")

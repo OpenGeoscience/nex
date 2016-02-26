@@ -1,15 +1,16 @@
 package com.kitware.nex
 
 
-import breeze.linalg._
 import org.apache.hadoop.fs.Path
+
+import breeze.linalg._
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.parquet.avro.AvroParquetWriter
 import ucar.nc2.units.DateUnit
 import ucar.nc2.{NetcdfFile, Variable}
-
 import scala.util.Try
+
 
 import collection.JavaConversions._
 
