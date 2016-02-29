@@ -88,7 +88,7 @@ object Gddp2Parquet {
 
   def main(args: Array[String]): Unit = {
     // should assert 3 values in args
-    val pr_path :: tasmin_path :: tasmax_path :: rest = args.toList
+    val pr_path :: tasmin_path :: tasmax_path :: output_path :: rest = args.toList
 
     val model = getModel(pr_path, tasmin_path, tasmax_path)
 
@@ -111,7 +111,7 @@ object Gddp2Parquet {
       getClass.getResourceAsStream("/gddp.avsc")
     )
 
-    val path = new Path("data.parquet")
+    val path = new Path(output_path)
     val writer = new AvroParquetWriter[GenericRecord](path, schema)
 
     var origin = Array(0, 0, 0)
