@@ -118,7 +118,7 @@
   tasks:
 
     - shell: >-
-        curl http://localhost/latest/meta-data/network/interfaces/macs/$(curl http://localhost/latest/meta-data/network/interfaces/macs/ 2>/dev/null | head -n 1)vpc-ipv4-cidr-block
+        curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/ 2>/dev/null | head -n 1)vpc-ipv4-cidr-block
       register: vpc_cdir_block_output
 
     - set_fact:
@@ -133,71 +133,41 @@
       with_items:
         - nfs-kernel-server
         - rabbitmq-server
+        - python-dev
+        - python-numpy
 
     - name: create /public
       file:
         path: /public
         state: directory
-        owner: "{{ ansible_ssh_user }}"
-        group: "{{ ansible_ssh_user }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
 
-    - name: setup /etc/exports
-      template:
-        src: exports.j2
-        dest: /etc/exports
 
-    - name: start NFS
-      service:
-        name: nfs-kernel-server
-        state: started
+- name: Configure workers
+  hosts: tag_Name_worker_template
+  become: yes
+  vars:
+    master_url: "{{ hostvars[groups['tag_Name_master_template'][0]]['ec2_dns_name'] }}"
+  tags:
+    - nfs
+    - nfs_worker
+  tasks:
+    - name: Install system packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - nfs-common
+        - python-dev
+        - python-numpy
 
-    - name: checkout NEX repo
-      git:
-        repo: git@github.com:OpenGeoscience/nex.git
-        dest: /public/nex
-        accept_hostkey: true
-      become: no
-      tags:
-        - celery
+    - name: create /public
+      file:
+        path: /public
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_group }}"
 
-    - name: template out celery master config
-      shell: >-
-        echo "{{ master_url }}" > perftest/.master_hostname
-      args:
-        chdir: /public/nex/experimental/celery_performance/
-      become: no
-      tags:
-        - test
-#
-#
-# - name: Configure workers
-#   hosts: tag_Name_celery_worker
-#   become: yes
-#   vars:
-#     master_url: "{{ hostvars[groups['tag_Name_celery_master'][0]]['ec2_dns_name'] }}"
-#   tags:
-#     - nfs
-#     - nfs_worker
-#   tasks:
-#     - name: Install system packages
-#       apt:
-#         name: "{{ item }}"
-#       with_items:
-#         - nfs-common
-#
-#     - name: create /public
-#       file:
-#         path: /public
-#         state: directory
-#         owner: "{{ ansible_ssh_user }}"
-#         group: "{{ ansible_ssh_user }}"
-#
-#     - name: mount /public
-#       mount:
-#         name: /public
-#         src: "{{ master_url }}:/public"
-#         fstype: nfs
-#         state: mounted
 #
 #
 # - name: Gather facts
