@@ -1,4 +1,8 @@
 from celery import Celery
+import tempfile
+import os
+import requests
+import logging
 
 app = Celery('example', broker='amqp://guest@172.31.38.99//')
 
@@ -12,6 +16,9 @@ app.conf.update(
 def build_url(opts):
     return ("http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/{scenario}/day/atmos/{variable}/r1i1p1"
             "/v1.0/{variable}_day_BCSD_{scenario}_r1i1p1_{model}_{year}.nc").format(**opts)
+
+def build_filename(opts):
+    return "day_BCSD_{scenario}_r1i1p1_{model}_{year}.parquet".format(**opts)
 
 def build_range(scenarios=None, models=None, years=None):
 
@@ -58,7 +65,45 @@ def build_range(scenarios=None, models=None, years=None):
 
                 yield (build_url({"model": model, "scenario": _scenario, "year": year, "variable": "pr" }),
                        build_url({"model": model, "scenario": _scenario, "year": year, "variable": "tasmin" }),
-                       build_url({"model": model, "scenario": _scenario, "year": year, "variable": "tasmax" }))
+                       build_url({"model": model, "scenario": _scenario, "year": year, "variable": "tasmax" }),
+                       build_filename({"model": model, "scenario": _scenario, "year": year}))
+
+
+@app.task
+def etl(pr_url, tasmin_url, tasmax_url, out_file):
+
+    # Set up Logging
+    logger = logging.getLogger('gddp.etl')
+    logger.setLevel(logging.INFO)
+
+    # Currently just log to console
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+    ch.setFormatter(formatter)
+
+
+    logger.addHandler(ch)
+
+    # Create a temporary directory
+    directory = tempfile.mkdtemp()
+
+    # Download the files
+    for url in [pr_url, tasmin_url, tasmax_url]:
+        local_file = os.path.join(directory, os.path.basename(url))
+
+        logger.info("Downloading {} to {}".format(url, local_file))
+
+        r = requests.get(url, stream=True)
+
+        with open(local_file, 'wb') as fh:
+            for chunk in r.iter_content(chunk_size=1024 * 1024 * 100):
+                if chunk:
+                    fh.write(chunk)
+
+    logger.info("Finished Download files".format(url, local_file))
+
 
 
 @app.task
@@ -66,3 +111,11 @@ def fib(x):
     if x < 2:
         return 1
     return fib(x-1) + fib(x -2 )
+
+
+if __name__ == "__main__":
+    etl(
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
+        'day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.parquet')
