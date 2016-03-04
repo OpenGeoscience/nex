@@ -1,15 +1,26 @@
+from __future__ import absolute_import
 from celery import Celery
 import tempfile
 import os
 import requests
 import logging
+import subprocess
+import shutil
+
+CONVERSION_JAR="/public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar"
+
+HADOOP_BIN="/opt/hadoop/2.7.1/bin/hadoop"
+HADOOP_DATA_DIR="/home/ubuntu/"
 
 app = Celery('example', broker='amqp://guest@172.31.38.99//')
 
 app.conf.update(
-    CELERY_TASK_RESULT_EXPIRES=3600,
+    CELERY_TASK_RESULT_EXPIRES=300,
     CELERY_SEND_EVENTS=True,
     CELERY_SEND_TASK_SENT_EVENT=True,
+    CELERY_TASK_SERIALIZER="json",
+    CELERYD_TASK_TIME_LIMIT=1800,
+    CELERYD_TASK_SOFT_TIME_LIMIT=1800
 )
 
 
@@ -52,24 +63,26 @@ def build_range(scenarios=None, models=None, years=None):
         years = range(1950, 2101)
 
     for year in years:
+        _scenarios = ["historical"] if year <= 2005 else scenarios
         for model in models:
-            for scenario in scenarios:
+            for scenario in _scenarios:
 
                 # If we're in a year less than 2005 we're really in the
                 # historical scenario
-                _scenario = "historical" if year <= 2005 else scenario
+
 
                 # These models do not have values for 2100
                 if (model == "bcc-csm1-1" or model == "MIROC5") and year == 2100:
                     continue
 
-                yield (build_url({"model": model, "scenario": _scenario, "year": year, "variable": "pr" }),
-                       build_url({"model": model, "scenario": _scenario, "year": year, "variable": "tasmin" }),
-                       build_url({"model": model, "scenario": _scenario, "year": year, "variable": "tasmax" }),
-                       build_filename({"model": model, "scenario": _scenario, "year": year}))
+                yield (build_url({"model": model, "scenario": scenario, "year": year, "variable": "pr" }),
+                       build_url({"model": model, "scenario": scenario, "year": year, "variable": "tasmin" }),
+                       build_url({"model": model, "scenario": scenario, "year": year, "variable": "tasmax" }),
+                       build_filename({"model": model, "scenario": scenario, "year": year}))
 
 
-@app.task
+
+@app.task(name="example.etl")
 def etl(pr_url, tasmin_url, tasmax_url, out_file):
 
     # Set up Logging
@@ -102,8 +115,47 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file):
                 if chunk:
                     fh.write(chunk)
 
-    logger.info("Finished Download files".format(url, local_file))
+    logger.info("Finished Download files")
 
+    cmd = ["java", "-jar", CONVERSION_JAR,
+           os.path.join(directory, os.path.basename(pr_url)),
+           os.path.join(directory, os.path.basename(tasmin_url)),
+           os.path.join(directory, os.path.basename(tasmax_url)),
+           os.path.join(directory, out_file)]
+
+
+    logger.info("Running \"{}\" to convert to parquet".format(" ".join(cmd)))
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    for line in iter(proc.stdout.readline, b''):
+        logger.info(line)
+
+
+    logger.info("Finished writing to {}".format(cmd[-1]))
+
+
+    # Ensure directory exists
+    cmd = [HADOOP_BIN, "fs", "-mkdir", HADOOP_DATA_DIR]
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+
+    if stderr != '':
+        logger.warn(stderr)
+
+    # Copy the file
+    cmd = [HADOOP_BIN, "fs", "-copyFromLocal", "-f",  os.path.join(directory, out_file), os.path.join(HADOOP_DATA_DIR, out_file)]
+    logger.info("Running {} to load parquet into HDFS".format(" ".join(cmd)))
+
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+
+    if stderr != '':
+        logger.warn(stderr)
+
+    logger.info("Finished loading parquet into HDFS at {}".format(os.path.join(HADOOP_DATA_DIR, out_file)))
+
+    # Delete the local copy - should do some kind of checksum here
+    shutil.rmtree(directory, ignore_errors=True)
 
 
 @app.task
@@ -114,7 +166,7 @@ def fib(x):
 
 
 if __name__ == "__main__":
-    etl(
+    etl.delay(
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
