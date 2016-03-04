@@ -14,13 +14,18 @@ HADOOP_DATA_DIR="/home/ubuntu/"
 
 app = Celery('example', broker='amqp://guest@172.31.38.99//')
 
+# from kombu.common import Broadcast
+
 app.conf.update(
     CELERY_TASK_RESULT_EXPIRES=300,
     CELERY_SEND_EVENTS=True,
     CELERY_SEND_TASK_SENT_EVENT=True,
     CELERY_TASK_SERIALIZER="json",
-    CELERYD_TASK_TIME_LIMIT=1800,
-    CELERYD_TASK_SOFT_TIME_LIMIT=1800
+    CELERY_TASK_TIME_LIMIT=1800,
+    CELERY_TASK_SOFT_TIME_LIMIT=1800,
+    CELERY_TRACK_STARTED=True,
+#    CELERY_QUEUES = (Broadcast('broadcast_tasks'), ),
+#    CELERY_ROUTES = {'example.hostname': {'queue': 'broadcast_tasks'}}
 )
 
 
@@ -157,6 +162,17 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file):
     # Delete the local copy - should do some kind of checksum here
     shutil.rmtree(directory, ignore_errors=True)
 
+
+# @app.task(name='example.hostname', rate_limit="1/m")
+# def hostname(hostname):
+#     from celery.exceptions import Reject
+#     import socket
+#     import time
+#     if socket.gethostname() != hostname:
+#         pass
+#     else:
+#         print hostname
+#         time.sleep(2)
 
 @app.task
 def fib(x):
