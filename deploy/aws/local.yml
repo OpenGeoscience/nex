@@ -45,8 +45,6 @@
         - ipython[notebook]
         - ipyparallel
         - avro
-        - matplotlib
-        - seaborn
       sudo: yes
 
 # Intermittent compile errors with pydoop

@@ -143,6 +143,9 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
 
+        # TODO:  Write a role that takes a github repo,  checks it out and then
+        #        installs everything in the requirements.txt and then removes the code
+
 
 - name: Configure workers
   hosts: tag_Name_worker_template
@@ -167,6 +170,9 @@
         state: directory
         owner: "{{ ansible_user }}"
         group: "{{ ansible_group }}"
+
+    # TODO:  Set up celeryd service
+
 
 #
 #
