@@ -46,7 +46,7 @@
 - hosts: vagrant
   vars:
     default_user: vagrant
-    hadoop_home: /opt/hadoop-2.7.2
+    hadoop_home: /opt/hadoop/2.7.2
   tags:
     - hadoop
   tasks:
@@ -61,7 +61,15 @@
         src: /opt/hadoop-2.7.2.tar.gz
         dest: /opt/
         copy: no
-        creates: /opt/hadoop-2.7.2/
+        creates: /opt/hadoop/2.7.2/
+
+    - name: Make Hadoop directory
+      file:
+        state: directory
+        path: "/opt/hadoop"
+
+    - name: Move Hadoop
+      shell: "mv -f /opt/hadoop-2.7.2 {{ hadoop_home }}"
 
     - name: Setup JAVA_HOME
       lineinfile:
