@@ -46,22 +46,22 @@
 - hosts: vagrant
   vars:
     default_user: vagrant
-    hadoop_home: /opt/hadoop/2.7.2
+    hadoop_home: /opt/hadoop/2.7.1
   tags:
     - hadoop
   tasks:
     - name: Download Hadoop
       get_url:
-        url: http://mirror.cc.columbia.edu/pub/software/apache/hadoop/common/current/hadoop-2.7.2.tar.gz
-        dest: /opt/hadoop-2.7.2.tar.gz
+        url: http://shinyfeather.com/hadoop/common/hadoop-2.7.1/hadoop-2.7.1.tar.gz
+        dest: /opt/hadoop-2.7.1.tar.gz
         force: no
 
     - name: Unarchive Hadoop
       unarchive:
-        src: /opt/hadoop-2.7.2.tar.gz
+        src: /opt/hadoop-2.7.1.tar.gz
         dest: /opt/
         copy: no
-        creates: /opt/hadoop/2.7.2/
+        creates: /opt/hadoop/2.7.1/
 
     - name: Make Hadoop directory
       file:
@@ -69,7 +69,7 @@
         path: "/opt/hadoop"
 
     - name: Move Hadoop
-      shell: "mv -f /opt/hadoop-2.7.2 {{ hadoop_home }}"
+      shell: "mv -f /opt/hadoop-2.7.1 {{ hadoop_home }}"
 
     - name: Setup JAVA_HOME
       lineinfile:
