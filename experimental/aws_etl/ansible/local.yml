@@ -1,0 +1,127 @@
+- hosts: vagrant
+  become: yes
+  become_user: root
+  vars:
+    default_user: vagrant
+  tags:
+    - setup
+  tasks:
+    - name: Add Oracle repository
+      apt_repository:
+        repo: ppa:webupd8team/java
+
+    - name: Update apt
+      apt:
+        update_cache: yes
+
+    # https://coderwall.com/p/zzdapg/ansible-recipe-to-install-java-7-selecting-the-oracle-license
+    - name: Automatically select the Oracle License
+      shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: latest
+        force: yes
+      with_items:
+        - htop
+        - rsync
+        - oracle-java7-installer
+
+    - name: Change ownership of /opt
+      file:
+        path: /opt
+        owner: vagrant
+        group: vagrant
+
+    - name: Globally disable host key checking on the virtualbox
+      lineinfile:
+        dest: "/etc/ssh/ssh_config"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - regexp: "#   StrictHostKeyChecking ask"
+          line: "    StrictHostKeyChecking no"
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+    hadoop_home: /opt/hadoop-2.7.2
+  tags:
+    - hadoop
+  tasks:
+    - name: Download Hadoop
+      get_url:
+        url: http://mirror.cc.columbia.edu/pub/software/apache/hadoop/common/current/hadoop-2.7.2.tar.gz
+        dest: /opt/hadoop-2.7.2.tar.gz
+        force: no
+
+    - name: Unarchive Hadoop
+      unarchive:
+        src: /opt/hadoop-2.7.2.tar.gz
+        dest: /opt/
+        copy: no
+        creates: /opt/hadoop-2.7.2/
+
+    - name: Setup JAVA_HOME
+      lineinfile:
+        dest: "{{ hadoop_home }}/etc/hadoop/hadoop-env.sh"
+        regexp: "^export JAVA_HOME="
+        line: "export JAVA_HOME=/usr/lib/jvm/java-7-oracle"
+
+    - name: Copy Hadoop Config files for pseudo-distributed mode
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - src: "hdfs-site.xml"
+          dest: "{{ hadoop_home }}/etc/hadoop/hdfs-site.xml"
+        - src: "core-site.xml"
+          dest: "{{ hadoop_home }}/etc/hadoop/core-site.xml"
+      tags:
+        - test
+
+    - name: Copy Vagrant private key
+      copy:
+        src: ../.vagrant/machines/default/virtualbox/private_key
+        dest: /home/vagrant/.ssh/id_rsa
+        mode: 0600
+
+    - name: Format the namenode
+      shell: >-
+        {{ hadoop_home }}/bin/hdfs namenode -format -force
+
+    - name: Start NameNode and DataNode daemon
+      shell: >-
+        {{ hadoop_home }}/sbin/start-dfs.sh
+
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+    spark_home: /opt/spark-1.6.0-bin-hadoop2.6/
+  tags:
+    - spark
+  tasks:
+    - name: Download Spark
+      get_url:
+        url: "http://mirror.cc.columbia.edu/pub/software/apache/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz"
+        dest: "/opt/spark-1.6.0-bin-hadoop2.6.tgz"
+        force: no
+
+    - name: Unarchive spark
+      unarchive:
+        src: /opt/spark-1.6.0-bin-hadoop2.6.tgz
+        dest: /opt/
+        copy: no
+        creates: "{{ spark_home }}/"
+
+    - name: Start Master
+      shell: >-
+        {{ spark_home }}/sbin/stop-master.sh &&
+        {{ spark_home }}/sbin/start-master.sh -h localhost
+
+    - name: Start Slave
+      shell: >-
+        {{ spark_home }}/sbin/stop-slave.sh &&
+        {{ spark_home }}/sbin/start-slave.sh spark://localhost:7077

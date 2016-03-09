@@ -7,3 +7,5 @@ docker_spark_cluster/opt
 *.ensime
 *.pyc
 *.retry
+/deploy/keys
+.vagrant/
