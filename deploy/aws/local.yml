@@ -75,7 +75,8 @@
 
 - hosts: head
   user: ubuntu
-
+  tags:
+    - local
   tasks:
     - name: generate ip.list
       local_action: command /home/kotfic/kitware/projects/NEX/aws/get_cluster_ips.sh
@@ -111,7 +112,8 @@
       sudo: yes
 
     - name: Install SBT
-      shell: "apt-get update && apt-get install sbt"
+      apt:
+        name: sbt
       sudo: yes
 
     - name: Setup ensime plugin

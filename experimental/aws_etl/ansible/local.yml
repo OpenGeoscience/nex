@@ -178,3 +178,69 @@
       service:
         name: celeryd
         state: started
+
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+  tags:
+    - scala
+  tasks:
+    - name: Create source directory
+      file:
+        state: directory
+        path: /home/vagrant/src/
+
+    - name: Get scala 2.11.4
+      get_url:
+        url: "http://downloads.typesafe.com/scala/2.11.4/scala-2.11.4.deb"
+        dest: /home/vagrant/src/scala-2.11.4.deb
+        force: no
+
+    - name: Install scala Deb
+      apt:
+        deb: /home/{{ ansible_env.USER }}/src/scala-2.11.4.deb
+      become: yes
+      become_user: root
+
+
+    - name: Set up SBT source
+      shell: "echo \"deb https://dl.bintray.com/sbt/debian /\" | sudo tee -a /etc/apt/sources.list.d/sbt.list"
+      become: yes
+      become_user: root
+
+
+    - name: Add SBT key
+      shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823"
+      become: yes
+      become_user: root
+
+
+    - name: Install SBT
+      apt:
+        name: sbt
+      become: yes
+      become_user: root
+
+    - name: Create /public directory
+      file:
+        state: directory
+        owner: vagrant
+        group: vagrant
+        path: /public
+      become: yes
+      become_user: root
+
+    # Submodule issues prevent using andible 'git' module
+    - name: Clone Git Repo
+      shell: >-
+        git clone https://github.com/OpenGeoscience/nex.git /public/nex
+      args:
+        creates: /public/nex
+
+    - name: Building ETL conversion JAR (this may take some time...)
+      shell: >-
+        sbt assembly
+      args:
+        chdir: /public/nex/src/parquet
+        creates: /public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar
