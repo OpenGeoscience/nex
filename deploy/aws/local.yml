@@ -140,6 +140,12 @@
         - all_files.txt
         - 1997_files.txt
         - ip.list
+        - all.sh
+
+    - name: All is a script
+      file:
+        path: /home/ubuntu/all.sh
+        mode: 0755
 
     - name: copy ssh config and private key
       copy:

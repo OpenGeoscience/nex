@@ -144,7 +144,7 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file):
 
 
     # Ensure directory exists
-    cmd = [HADOOP_BIN, "fs", "-mkdir", HADOOP_DATA_DIR]
+    cmd = [HADOOP_BIN, "fs", "-mkdir", "-p", HADOOP_DATA_DIR]
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
