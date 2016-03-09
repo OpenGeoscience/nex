@@ -9,3 +9,4 @@ docker_spark_cluster/opt
 *.retry
 /deploy/keys
 .vagrant/
+/experimental/aws_etl/gddp_etl/.master

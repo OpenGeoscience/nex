@@ -12,7 +12,11 @@ CONVERSION_JAR="/public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.j
 HADOOP_BIN="/opt/hadoop/2.7.1/bin/hadoop"
 HADOOP_DATA_DIR="/home/ubuntu/"
 
-app = Celery('example', broker='amqp://guest@172.31.38.99//')
+with open(os.path.dirname(__file__) + "/.master", "r") as fh:
+    master_hostname = fh.read().rstrip()
+
+
+app = Celery('example', broker='amqp://guest@{}//'.format(master_hostname))
 
 # from kombu.common import Broadcast
 

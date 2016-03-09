@@ -125,3 +125,48 @@
       shell: >-
         {{ spark_home }}/sbin/stop-slave.sh &&
         {{ spark_home }}/sbin/start-slave.sh spark://localhost:7077
+
+
+- hosts: vagrant
+  become: yes
+  become_user: root
+  vars:
+    default_user: vagrant
+    celery_app: gddp_etl
+    celery_dir: /vagrant
+  tags:
+    - celery
+  tasks:
+    - name: Install system packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - build-essential
+        - rabbitmq-server
+        - python-dev
+        - python-pip
+
+    - name: Install celery
+      pip:
+        name: celery
+        version: 3.1.20
+
+    - name: Install celeryd init script
+      copy:
+        src: celeryd.script
+        dest: /etc/init.d/celeryd
+        mode: 0755
+
+    - name: Install celeryd config script
+      template:
+        src: celeryd.conf
+        dest: /etc/default/celeryd
+
+    - name: Add master url to .master file in gddp_etl
+      shell: >-
+        echo "localhost" > /vagrant/gddp_etl/.master
+
+    - name: Start celeryd service
+      service:
+        name: celeryd
+        state: started
