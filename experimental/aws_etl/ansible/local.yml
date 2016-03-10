@@ -219,6 +219,7 @@
     - name: Install SBT
       apt:
         name: sbt
+        update-cache: yes
       become: yes
       become_user: root
 
