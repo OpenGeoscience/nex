@@ -6,17 +6,20 @@ import requests
 import logging
 import subprocess
 import shutil
+import socket
+import pwd
 
 CONVERSION_JAR="/public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar"
 
 HADOOP_BIN="/opt/hadoop/2.7.1/bin/hadoop"
-HADOOP_DATA_DIR="/home/ubuntu/"
 
 with open(os.path.dirname(__file__) + "/.master", "r") as fh:
     master_hostname = fh.read().rstrip()
 
 
-app = Celery('example', broker='amqp://guest@{}//'.format(master_hostname))
+app = Celery('example',
+             broker='amqp://guest@{}//'.format(master_hostname),
+             backend='amqp://guest@{}//'.format(master_hostname))
 
 # from kombu.common import Broadcast
 
@@ -34,13 +37,18 @@ app.conf.update(
 
 
 def build_url(opts):
-    return ("http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/{scenario}/day/atmos/{variable}/r1i1p1"
-            "/v1.0/{variable}_day_BCSD_{scenario}_r1i1p1_{model}_{year}.nc").format(**opts)
+    return ("http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/"
+            "{scenario}/day/atmos/{variable}/r1i1p1"
+            "/v1.0/{variable}_day_BCSD_{scenario}_"
+            "r1i1p1_{model}_{year}.nc").format(**opts)
 
 def build_filename(opts):
     return "day_BCSD_{scenario}_r1i1p1_{model}_{year}.parquet".format(**opts)
 
-def build_range(scenarios=None, models=None, years=None):
+def build_range(prefix=None, scenarios=None, models=None, years=None):
+
+    if prefix is None:
+        prefix = lambda x: ""
 
     if scenarios is None:
         scenarios = ["rcp45", "rcp85"]
@@ -72,27 +80,33 @@ def build_range(scenarios=None, models=None, years=None):
         years = range(1950, 2101)
 
     for year in years:
+        # If we're in a year less than 2005 we're really in the
+        # historical scenario
         _scenarios = ["historical"] if year <= 2005 else scenarios
+
         for model in models:
             for scenario in _scenarios:
 
-                # If we're in a year less than 2005 we're really in the
-                # historical scenario
-
-
                 # These models do not have values for 2100
-                if (model == "bcc-csm1-1" or model == "MIROC5") and year == 2100:
+                if (model == "bcc-csm1-1" or model == "MIROC5") and \
+                   year == 2100:
                     continue
 
-                yield (build_url({"model": model, "scenario": scenario, "year": year, "variable": "pr" }),
-                       build_url({"model": model, "scenario": scenario, "year": year, "variable": "tasmin" }),
-                       build_url({"model": model, "scenario": scenario, "year": year, "variable": "tasmax" }),
-                       build_filename({"model": model, "scenario": scenario, "year": year}))
+                opts = {"model": model, "scenario": scenario, "year": year}
+
+                yield (build_url({"model": model, "scenario": scenario,
+                                  "year": year, "variable": "pr"}),
+                       build_url({"model": model, "scenario": scenario,
+                                  "year": year, "variable": "tasmin"}),
+                       build_url({"model": model, "scenario": scenario,
+                                  "year": year, "variable": "tasmax"}),
+                       prefix(opts) + build_filename(opts))
 
 
 
 @app.task(name="example.etl")
-def etl(pr_url, tasmin_url, tasmax_url, out_file):
+def etl(pr_url, tasmin_url, tasmax_url, out_file,
+        hdfs_url=None, s3_bucket=None):
 
     # Set up Logging
     logger = logging.getLogger('gddp.etl')
@@ -132,58 +146,54 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file):
            os.path.join(directory, os.path.basename(tasmax_url)),
            os.path.join(directory, out_file)]
 
-
     logger.info("Running \"{}\" to convert to parquet".format(" ".join(cmd)))
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for line in iter(proc.stdout.readline, b''):
         logger.info(line)
 
-
     logger.info("Finished writing to {}".format(cmd[-1]))
 
-
-    # Ensure directory exists
-    cmd = [HADOOP_BIN, "fs", "-mkdir", "-p", HADOOP_DATA_DIR]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-
-    if stderr != '':
-        logger.warn(stderr)
-
     # Copy the file
-    cmd = [HADOOP_BIN, "fs", "-copyFromLocal", "-f",  os.path.join(directory, out_file), os.path.join(HADOOP_DATA_DIR, out_file)]
-    logger.info("Running {} to load parquet into HDFS".format(" ".join(cmd)))
+    if hdfs_url is not None:
+        # Ensure directory exists
+        cmd = [HADOOP_BIN, "fs", "-mkdir", "-p", hdfs_url]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
 
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = p.communicate()
+        if stderr != '':
+            logger.warn(stderr)
 
-    if stderr != '':
-        logger.warn(stderr)
+        cmd = [HADOOP_BIN, "fs", "-copyFromLocal", "-f",
+               os.path.join(directory, out_file),
+               os.path.join(hdfs_url, out_file)]
 
-    logger.info("Finished loading parquet into HDFS at {}".format(os.path.join(HADOOP_DATA_DIR, out_file)))
+        logger.info("Running {} to load parquet into HDFS".format(
+            " ".join(cmd)))
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+
+        if stderr != '':
+            logger.warn(stderr)
+
+        logger.info("Finished loading parquet into HDFS at {}".format(
+            os.path.join(hdfs_url, out_file)))
+
+        return os.path.join(hdfs_url, out_file)
+
+
 
     # Delete the local copy - should do some kind of checksum here
-    shutil.rmtree(directory, ignore_errors=True)
-
-
-# @app.task(name='example.hostname', rate_limit="1/m")
-# def hostname(hostname):
-#     from celery.exceptions import Reject
-#     import socket
-#     import time
-#     if socket.gethostname() != hostname:
-#         pass
-#     else:
-#         print hostname
-#         time.sleep(2)
-
-@app.task
-def fib(x):
-    if x < 2:
-        return 1
-    return fib(x-1) + fib(x -2 )
-
+    if hdfs_url is not None or s3_bucket is not None:
+        shutil.rmtree(directory, ignore_errors=True)
+        logger.info("Removed {}".format(directory))
+    else:
+        hostname = socket.gethostname()
+        user = pwd.getpwuid(os.getuid()).pw_name
+        return "{}@{}:{}".format(user, hostname, os.path.join(directory, out_file))
 
 if __name__ == "__main__":
     etl.delay(

@@ -40,6 +40,7 @@
         state: restarted
       tags:
         - restart
+        - restart_nfs
       become: yes
       become_user: root
 
@@ -114,6 +115,7 @@
         state: restarted
       tags:
         - restart
+        - restart_rabbitmq
 
 - hosts: tag_Name_ec2_pod_kotfic_nex_head
   become: yes
@@ -185,6 +187,7 @@
         state: restarted
       tags:
         - restart
+        - restart_celery
 
 - hosts: tag_Name_ec2_pod_kotfic_nex_head
   tags:
