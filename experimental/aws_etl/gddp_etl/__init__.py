@@ -32,8 +32,7 @@ app.conf.update(
     CELERY_TASK_TIME_LIMIT=1800,
     CELERY_TASK_SOFT_TIME_LIMIT=1800,
     CELERY_TRACK_STARTED=True,
-#    CELERY_QUEUES = (Broadcast('broadcast_tasks'), ),
-#    CELERY_ROUTES = {'example.hostname': {'queue': 'broadcast_tasks'}}
+    CELERYD_PREFETCH_MULTIPLIER=1
 )
 
 
@@ -132,104 +131,107 @@ def hadoop_copy_from_local(src, dest, overwrite=None, libjars=None):
         dest))
 
 
-@app.task(name="example.etl")
-def etl(pr_url, tasmin_url, tasmax_url, out_file,
+@app.task(bind=True, name="example.etl", 
+          default_retry_delay=30, max_retries=3,
+          acks_late=True)
+def etl(self, pr_url, tasmin_url, tasmax_url, out_file,
         hdfs_url=None, s3_url=None, overwrite=True):
+    try:
+        # Set up Logging
+        logger = logging.getLogger('gddp.etl')
+        logger.setLevel(logging.INFO)
 
-    # Set up Logging
-    logger = logging.getLogger('gddp.etl')
-    logger.setLevel(logging.INFO)
+        # Currently just log to console
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        
+        formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+        ch.setFormatter(formatter)
+        
+        logger.addHandler(ch)
+        
+        # Create a temporary directory
+        directory = tempfile.mkdtemp()
+        
+        # Download the files
+        for url in [pr_url, tasmin_url, tasmax_url]:
+            local_file = os.path.join(directory, os.path.basename(url))
+        
+            logger.info("Downloading {} to {}".format(url, local_file))
+        
+            r = requests.get(url, stream=True)
+        
+            with open(local_file, 'wb') as fh:
+                for chunk in r.iter_content(chunk_size=1024 * 1024 * 100):
+                    if chunk:
+                        fh.write(chunk)
+        
+        logger.info("Finished Download files")
+        
+        cmd = ["java", "-jar", CONVERSION_JAR,
+               os.path.join(directory, os.path.basename(pr_url)),
+               os.path.join(directory, os.path.basename(tasmin_url)),
+               os.path.join(directory, os.path.basename(tasmax_url)),
+               os.path.join(directory, out_file)]
+        
+        logger.info("Running \"{}\" to convert to parquet".format(" ".join(cmd)))
+        
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        for line in iter(proc.stdout.readline, b''):
+            logger.info(line)
+        
+        logger.info("Finished writing to {}".format(cmd[-1]))
+        
+        ret = []
+        
+        # Copy the file
+        if hdfs_url is not None:
+            # Ensure directory exists
+            cmd = [HADOOP_BIN, "fs", "-mkdir", "-p", hdfs_url]
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+        
+            if stderr != '':
+                logger.warn(stderr)
+        
+            # hadoop_copy_from_local here
+            hadoop_copy_from_local(os.path.join(directory, out_file),
+                                   os.path.join(hdfs_url, out_file),
+                                   overwrite=overwrite)
+        
+            ret.append(os.path.join(hdfs_url, out_file))
+        
+        if s3_url is not None:
+            libjars = ",".join(glob.glob("/opt/hadoop/2.7.1/share/hadoop/tools/lib/*.jar"))
+        
+            hadoop_copy_from_local(os.path.join(directory, out_file),
+                                   os.path.join(s3_url, out_file),
+                                   overwrite=overwrite, libjars=libjars)
+        
+            ret.append(os.path.join(s3_url, out_file))
+        
+        
+        # Delete the local copy - should do some kind of checksum here
+        if hdfs_url is not None or s3_url is not None:
+            shutil.rmtree(directory, ignore_errors=True)
+            logger.info("Removed {}".format(directory))
+        else:
+            hostname = socket.gethostname()
+            user = pwd.getpwuid(os.getuid()).pw_name
+            ret.append("{}@{}:{}".format(user, hostname, os.path.join(directory, out_file)))
+        
+        logger.info("Wrote: {}".format(", ".join(ret)))
+        return ret
+    except Exception as exc:
+        raise self.retry(exc=exc)
 
-    # Currently just log to console
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
-    ch.setFormatter(formatter)
-
-
-    logger.addHandler(ch)
-
-    # Create a temporary directory
-    directory = tempfile.mkdtemp()
-
-    # Download the files
-    for url in [pr_url, tasmin_url, tasmax_url]:
-        local_file = os.path.join(directory, os.path.basename(url))
-
-        logger.info("Downloading {} to {}".format(url, local_file))
-
-        r = requests.get(url, stream=True)
-
-        with open(local_file, 'wb') as fh:
-            for chunk in r.iter_content(chunk_size=1024 * 1024 * 100):
-                if chunk:
-                    fh.write(chunk)
-
-    logger.info("Finished Download files")
-
-    cmd = ["java", "-jar", CONVERSION_JAR,
-           os.path.join(directory, os.path.basename(pr_url)),
-           os.path.join(directory, os.path.basename(tasmin_url)),
-           os.path.join(directory, os.path.basename(tasmax_url)),
-           os.path.join(directory, out_file)]
-
-    logger.info("Running \"{}\" to convert to parquet".format(" ".join(cmd)))
-
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    for line in iter(proc.stdout.readline, b''):
-        logger.info(line)
-
-    logger.info("Finished writing to {}".format(cmd[-1]))
-
-    ret = []
-
-    # Copy the file
-    if hdfs_url is not None:
-        # Ensure directory exists
-        cmd = [HADOOP_BIN, "fs", "-mkdir", "-p", hdfs_url]
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-
-        if stderr != '':
-            logger.warn(stderr)
-
-        # hadoop_copy_from_local here
-        hadoop_copy_from_local(os.path.join(directory, out_file),
-                               os.path.join(hdfs_url, out_file),
-                               overwrite=overwrite)
-
-        ret.append(os.path.join(hdfs_url, out_file))
-
-    if s3_url is not None:
-        libjars = ",".join(glob.glob("/opt/hadoop/2.7.1/share/hadoop/tools/lib/*.jar"))
-
-        hadoop_copy_from_local(os.path.join(directory, out_file),
-                               os.path.join(s3_url, out_file),
-                               overwrite=overwrite, libjars=libjars)
-
-        ret.append(os.path.join(s3_url, out_file))
-
-
-    # Delete the local copy - should do some kind of checksum here
-    if hdfs_url is not None or s3_url is not None:
-        shutil.rmtree(directory, ignore_errors=True)
-        logger.info("Removed {}".format(directory))
-    else:
-        hostname = socket.gethostname()
-        user = pwd.getpwuid(os.getuid()).pw_name
-        ret.append("{}@{}:{}".format(user, hostname, os.path.join(directory, out_file)))
-
-    logger.info("Wrote: {}".format(", ".join(ret)))
-    return ret
 
 if __name__ == "__main__":
     etl.delay(
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
-        'day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.parquet',
-        hdfs_url="hdfs:///home/ubuntu/",
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/historical/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/historical/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/historical/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc',
+        'day_BCSD_historical_r1i1p1_ACCESS1-0_1997.parquet',        
         s3_url="s3a://kitware-nasanex/gddp_parquet", 
-        overwrite=True)
+        overwrite=False)
