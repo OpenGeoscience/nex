@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import socket
 import pwd
+import glob
 
 CONVERSION_JAR="/public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar"
 
@@ -103,10 +104,37 @@ def build_range(prefix=None, scenarios=None, models=None, years=None):
                        prefix(opts) + build_filename(opts))
 
 
+def hadoop_copy_from_local(src, dest, overwrite=None, libjars=None):
+    logger = logging.getLogger('gddp.etl')
+
+    cmd = [HADOOP_BIN, "fs"]
+
+    if libjars is not None:
+        cmd.extend(["-libjars", libjars])
+
+    cmd.append("-copyFromLocal")
+
+    if overwrite is not None:
+        cmd.append("-f")
+
+    cmd.extend([src, dest])
+
+    logger.info("Running {}".format(" ".join(cmd)))
+
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+
+    if stderr != '':
+        logger.warn(stderr)
+
+    logger.info("Finished loading parquet to {}".format(
+        dest))
+
 
 @app.task(name="example.etl")
 def etl(pr_url, tasmin_url, tasmax_url, out_file,
-        hdfs_url=None, s3_bucket=None):
+        hdfs_url=None, s3_url=None, overwrite=True):
 
     # Set up Logging
     logger = logging.getLogger('gddp.etl')
@@ -165,29 +193,25 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
         if stderr != '':
             logger.warn(stderr)
 
-        cmd = [HADOOP_BIN, "fs", "-copyFromLocal", "-f",
-               os.path.join(directory, out_file),
-               os.path.join(hdfs_url, out_file)]
-
-        logger.info("Running {} to load parquet into HDFS".format(
-            " ".join(cmd)))
-
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-
-        if stderr != '':
-            logger.warn(stderr)
-
-        logger.info("Finished loading parquet into HDFS at {}".format(
-            os.path.join(hdfs_url, out_file)))
+        # hadoop_copy_from_local here
+        hadoop_copy_from_local(os.path.join(directory, out_file),
+                               os.path.join(hdfs_url, out_file),
+                               overwrite=overwrite)
 
         return os.path.join(hdfs_url, out_file)
 
+    if s3_url is not None:
+        libjars = ",".join(glob.glob("/opt/hadoop/2.7.1/share/hadoop/tools/lib/*.jar"))
+
+        hadoop_copy_from_local(os.path.join(directory, out_file),
+                               os.path.join(s3_url, out_file),
+                               overwrite=overwrite, libjars=libjars)
+
+        return os.path.join(s3_url, out_file)
 
 
     # Delete the local copy - should do some kind of checksum here
-    if hdfs_url is not None or s3_bucket is not None:
+    if hdfs_url is not None or s3_url is not None:
         shutil.rmtree(directory, ignore_errors=True)
         logger.info("Removed {}".format(directory))
     else:
@@ -195,8 +219,10 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
         user = pwd.getpwuid(os.getuid()).pw_name
         return "{}@{}:{}".format(user, hostname, os.path.join(directory, out_file))
 
+
+
 if __name__ == "__main__":
-    etl.delay(
+    etl(
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
