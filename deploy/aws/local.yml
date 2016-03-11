@@ -114,6 +114,7 @@
     - name: Install SBT
       apt:
         name: sbt
+        update-cache: yes
       sudo: yes
 
     - name: Setup ensime plugin

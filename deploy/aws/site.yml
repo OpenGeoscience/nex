@@ -10,14 +10,36 @@
       state: started
   tags:
     - hdfs
+  tasks:
+    - name: Copy mapred-site.xml.template
+      shell: >-
+        cp /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml.template /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml
+      args:
+        become: yes
+        become_user: hdfs
+      tags:
+        - local
 
 - hosts: datanodes
   roles:
     - role: hadoop-hdfs-datanode
       hdfs_namenode_ansible_group: head
       state: started
+  tasks:
+    - name: Copy mapred-site.xml.template
+      shell: >-
+        cp /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml.template /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml
+      args:
+        become: yes
+        become_user: hdfs
+      tags:
+        - local
+
+
   tags:
     - hdfs
+
+
 
 - hosts: spark
   roles:
