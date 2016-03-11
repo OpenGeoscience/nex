@@ -36,6 +36,19 @@ app.conf.update(
 #    CELERY_ROUTES = {'example.hostname': {'queue': 'broadcast_tasks'}}
 )
 
+# Set up Logging
+logger = logging.getLogger('gddp.etl')
+logger.setLevel(logging.INFO)
+
+# Currently just log to console
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
 
 def build_url(opts):
     return ("http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/"
@@ -43,8 +56,10 @@ def build_url(opts):
             "/v1.0/{variable}_day_BCSD_{scenario}_"
             "r1i1p1_{model}_{year}.nc").format(**opts)
 
+
 def build_filename(opts):
     return "day_BCSD_{scenario}_r1i1p1_{model}_{year}.parquet".format(**opts)
+
 
 def build_range(prefix=None, scenarios=None, models=None, years=None):
 
@@ -105,8 +120,6 @@ def build_range(prefix=None, scenarios=None, models=None, years=None):
 
 
 def hadoop_copy_from_local(src, dest, overwrite=None, libjars=None):
-    logger = logging.getLogger('gddp.etl')
-
     cmd = [HADOOP_BIN, "fs"]
 
     if libjars is not None:
@@ -135,20 +148,6 @@ def hadoop_copy_from_local(src, dest, overwrite=None, libjars=None):
 @app.task(name="example.etl")
 def etl(pr_url, tasmin_url, tasmax_url, out_file,
         hdfs_url=None, s3_url=None, overwrite=True):
-
-    # Set up Logging
-    logger = logging.getLogger('gddp.etl')
-    logger.setLevel(logging.INFO)
-
-    # Currently just log to console
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
-    ch.setFormatter(formatter)
-
-
-    logger.addHandler(ch)
 
     # Create a temporary directory
     directory = tempfile.mkdtemp()
@@ -231,5 +230,5 @@ if __name__ == "__main__":
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
         'day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.parquet',
         hdfs_url="hdfs:///home/ubuntu/",
-        s3_url="s3a://kitware-nasanex/gddp_parquet", 
+        s3_url="s3a://kitware-nasanex/gddp_parquet",
         overwrite=True)
