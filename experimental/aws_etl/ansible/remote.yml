@@ -1,0 +1,90 @@
+- hosts: tag_Name_ec2_pod_kotfic_nex_head
+  tags:
+    - nfs
+  tasks:
+    - name: Get nfs-kernel-server
+      apt:
+        name: nfs-kernel-server
+        update-cache: yes
+      become: yes
+      become_user: root
+
+    - name: Set up /public
+      file:
+        state: directory
+        path: /public
+        owner: ubuntu
+        group: ubuntu
+      become: yes
+      become_user: root
+
+    - name: get vpc_cird
+      shell: >-
+        curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/ 2>/dev/null | head -n 1)vpc-ipv4-cidr-block
+      register: vpc_cird_command
+
+    - name: set vpc_cird
+      set_fact:
+        vpc_cird: "{{ vpc_cird_command.stdout }}"
+
+    - name: update /etc/exports
+      lineinfile:
+        dest: /etc/exports
+        line: "/public {{ vpc_cird }}(rw,sync,no_subtree_check)"
+      become: yes
+      become_user: root
+
+    - name: restart nfs server
+      service:
+        name: nfs-kernel-server
+        state: restarted
+      become: yes
+      become_user: root
+
+    # NOTE:  before merging into master branch has to be changed
+    - name: Clone NEX repo
+      git:
+        repo: git@github.com:OpenGeoscience/nex.git
+        dest: /public/nex
+        version: aws_etl
+        ssh_opts: "-o StrictHostKeyChecking=no"
+        clone: no
+
+    - name: Create .master file with IP for celery app
+      shell: >-
+        echo {{ ec2_ip_address }} > /public/nex/experimental/aws_etl/gddp_etl/.master
+
+- hosts: tag_Name_ec2_pod_kotfic_nex_data
+  tags:
+    - nfs
+  vars:
+    master_hostname: "{{ groups['tag_Name_ec2_pod_kotfic_nex_head'][0] }}"
+    master_ip: "{{ hostvars[groups['tag_Name_ec2_pod_kotfic_nex_head'][0]]['ec2_ip_address'] }}"
+    master_private_ip: "{{ hostvars[groups['tag_Name_ec2_pod_kotfic_nex_head'][0]]['ec2_private_ip_address'] }}"
+  tasks:
+
+    - name: Get nfs-kernel-server
+      apt:
+        name: nfs-common
+        update-cache: yes
+      become: yes
+      become_user: root
+
+    - name: Set up /public
+      file:
+        state: directory
+        path: /public
+        owner: ubuntu
+        group: ubuntu
+      become: yes
+      become_user: root
+
+    - name: Mount /public directory
+      mount:
+        name: /public
+        src: "{{ master_private_ip }}:/public"
+        fstype: nfs
+        state: mounted
+      become: yes
+      become_user: root
+# - hosts: tag_ec2_pod_kotfic_nex
