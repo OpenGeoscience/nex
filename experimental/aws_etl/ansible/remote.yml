@@ -38,6 +38,8 @@
       service:
         name: nfs-kernel-server
         state: restarted
+      tags:
+        - restart
       become: yes
       become_user: root
 
@@ -52,7 +54,7 @@
 
     - name: Create .master file with IP for celery app
       shell: >-
-        echo {{ ec2_ip_address }} > /public/nex/experimental/aws_etl/gddp_etl/.master
+        echo {{ ec2_private_ip_address }} > /public/nex/experimental/aws_etl/gddp_etl/.master
 
 - hosts: tag_Name_ec2_pod_kotfic_nex_data
   tags:
@@ -87,4 +89,110 @@
         state: mounted
       become: yes
       become_user: root
-# - hosts: tag_ec2_pod_kotfic_nex
+
+
+- hosts: tag_Name_ec2_pod_kotfic_nex_head
+  become: yes
+  become_user: root
+  tags:
+    - rabbitmq
+  tasks:
+    - name: Install rabbitmq-server
+      apt:
+        name: rabbitmq-server
+        update-cache: yes
+
+    - name: Allow remote guest users
+      lineinfile:
+        dest: /etc/rabbitmq/rabbitmq.conf
+        line: "[{rabbit, [{loopback_users, []}]}]."
+        create: yes
+
+    - name: Restart rabbitmq-server
+      service:
+        name: rabbitmq-server
+        state: restarted
+      tags:
+        - restart
+
+- hosts: tag_Name_ec2_pod_kotfic_nex_head
+  become: yes
+  become_user: root
+  tags:
+    - celery
+  tasks:
+    - name: Install celery dependencies
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - python-dev
+        - python-pip
+
+    - name: Install celery
+      pip:
+        name: celery
+        version: 3.1.20
+
+
+- hosts: tag_Name_ec2_pod_kotfic_nex_data
+  become: yes
+  become_user: root
+  vars:
+    celery_app: gddp_etl
+    celery_dir: /public/nex/experimental/aws_etl
+    celery_user: ubuntu
+    celery_group: ubuntu
+  tags:
+    - celery
+  tasks:
+    - name: Install celery dependencies
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - python-dev
+        - python-pip
+
+    - name: Install celery
+      pip:
+        name: celery
+        version: 3.1.20
+
+    - name: Install celeryd init script
+      copy:
+        src: celeryd.script
+        dest: /etc/init.d/celeryd
+        mode: 0755
+
+    - name: Install celeryd config script
+      template:
+        src: celeryd.conf
+        dest: /etc/default/celeryd
+        mode: 0640
+
+    - name: Create log and run directories
+      file:
+        state: directory
+        path: "{{ item }}"
+        owner: ubuntu
+        group: ubuntu
+      with_items:
+        - /var/log/celery
+        - /var/run/celery
+
+    - name: Start celeryd service
+      service:
+        name: celeryd
+        state: restarted
+      tags:
+        - restart
+
+- hosts: tag_Name_ec2_pod_kotfic_nex_head
+  tags:
+    - scala
+  tasks:
+    - name: Building ETL conversion JAR (this may take some time...)
+      shell: >-
+        sbt assembly
+      args:
+        chdir: /public/nex/src/parquet
+        creates: /public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar

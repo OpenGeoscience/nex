@@ -142,6 +142,8 @@
     default_user: vagrant
     celery_app: gddp_etl
     celery_dir: /vagrant
+    celery_user: vagrant
+    celery_group: vagrant
   tags:
     - celery
   tasks:
