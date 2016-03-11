@@ -182,6 +182,8 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
 
     logger.info("Finished writing to {}".format(cmd[-1]))
 
+    ret = []
+
     # Copy the file
     if hdfs_url is not None:
         # Ensure directory exists
@@ -198,7 +200,7 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
                                os.path.join(hdfs_url, out_file),
                                overwrite=overwrite)
 
-        return os.path.join(hdfs_url, out_file)
+        ret.append(os.path.join(hdfs_url, out_file))
 
     if s3_url is not None:
         libjars = ",".join(glob.glob("/opt/hadoop/2.7.1/share/hadoop/tools/lib/*.jar"))
@@ -207,7 +209,7 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
                                os.path.join(s3_url, out_file),
                                overwrite=overwrite, libjars=libjars)
 
-        return os.path.join(s3_url, out_file)
+        ret.append(os.path.join(s3_url, out_file))
 
 
     # Delete the local copy - should do some kind of checksum here
@@ -217,13 +219,17 @@ def etl(pr_url, tasmin_url, tasmax_url, out_file,
     else:
         hostname = socket.gethostname()
         user = pwd.getpwuid(os.getuid()).pw_name
-        return "{}@{}:{}".format(user, hostname, os.path.join(directory, out_file))
+        ret.append("{}@{}:{}".format(user, hostname, os.path.join(directory, out_file)))
 
-
+    logger.info("Wrote: {}".format(", ".join(ret)))
+    return ret
 
 if __name__ == "__main__":
-    etl(
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
-        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.nc',
-        'day_BCSD_rcp45_r1i1p1_ACCESS1-0_2006.parquet')
+    etl.delay(
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/pr/r1i1p1/v1.0/pr_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
+        'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.nc',
+        'day_BCSD_rcp45_r1i1p1_ACCESS1-0_2007.parquet',
+        hdfs_url="hdfs:///home/ubuntu/",
+        s3_url="s3a://kitware-nasanex/gddp_parquet", 
+        overwrite=True)
