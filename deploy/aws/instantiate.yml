@@ -18,7 +18,4 @@
         hosts: "{{ ec2_pod_spec.hosts }}"
 
     tags:
-      - test
-      - hdfs
-      - spark
-      - local
+      - always

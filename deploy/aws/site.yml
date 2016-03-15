@@ -1,6 +1,8 @@
 ---
 
 - include: instantiate.yml
+  tags:
+    - always
 - include: filesystem.yml
 
 - hosts: head
@@ -10,34 +12,66 @@
       state: started
   tags:
     - hdfs
-  tasks:
-    - name: Copy mapred-site.xml.template
-      shell: >-
-        cp /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml.template /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml
-      args:
-        become: yes
-        become_user: hdfs
-      tags:
-        - local
 
 - hosts: datanodes
   roles:
     - role: hadoop-hdfs-datanode
       hdfs_namenode_ansible_group: head
       state: started
-  tasks:
-    - name: Copy mapred-site.xml.template
-      shell: >-
-        cp /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml.template /opt/hadoop/2.7.1/etc/hadoop/mapred-site.xml
-      args:
-        become: yes
-        become_user: hdfs
-      tags:
-        - local
-
-
   tags:
     - hdfs
+
+- hosts: head
+  vars:
+    hdfs_user: hdfs
+    hdfs_group: hadoop
+    hadoop_home: "/opt/hadoop/2.7.1/"
+    hadoop_conf: "{{ hadoop_home }}etc/hadoop/"
+  roles:
+    - role: upstart
+      name: yarn-resourcemanager
+      user: "{{ hdfs_user }}"
+      group: "{{ hdfs_group }}"
+      description: "Run YARN resource manager"
+      command: >-
+        "{{ hadoop_home }}bin/yarn"
+        --config "{{ hadoop_conf }}" resourcemanager
+    - role: yarn
+      hdfs_namenode_ansible_group: head
+      hdfs_net_interface: eth0
+  tasks:
+    - name: Start Resource Manager
+      service:
+        name: yarn-resourcemanager
+        state: started
+  tags:
+    - yarn
+
+- hosts: datanodes
+  vars:
+    hdfs_user: hdfs
+    hdfs_group: hadoop
+    hadoop_home: "/opt/hadoop/2.7.1/"
+    hadoop_conf: "{{ hadoop_home }}etc/hadoop/"
+  roles:
+    - role: upstart
+      name: yarn-nodemanager
+      user: "{{ hdfs_user }}"
+      group: "{{ hdfs_group }}"
+      description: "Run YARN nodemanager"
+      command: >-
+        "{{ hadoop_home }}bin/yarn"
+        --config "{{ hadoop_conf }}" nodemanager
+    - role: yarn
+      hdfs_namenode_ansible_group: head
+      hdfs_net_interface: eth0
+  tasks:
+    - name: Start Resource Manager
+      service:
+        name: yarn-nodemanager
+        state: started
+  tags:
+    - yarn
 
 
 
