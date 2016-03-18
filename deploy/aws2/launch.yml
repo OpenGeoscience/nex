@@ -1,0 +1,49 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Launch master instance
+      ec2:
+        # Required variables
+        instance_type: "{{ ec2_master_instance_type }}"
+        image: "{{ ec2_master_ami }}"
+        exact_count: 1
+        region: "{{ ec2_region }}"
+
+        # Optional variables
+        group: "{{ ec2_security_group|default(omit) }}"
+        key_name: "{{ ec2_key_name|default(omit) }}"
+        instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
+
+        # Derived or static variables
+        instance_tags: "{{ master_tag|combine(ec2_master_additional_tags|default({})) }}"
+        count_tag: "{{ master_tag }}"
+        wait: true
+      register: master
+
+    - name: Launch node instances
+      ec2:
+        # Required variables
+        instance_type: "{{ ec2_node_instance_type }}"
+        image: "{{ ec2_node_ami }}"
+        exact_count: "{{ ec2_node_count }}"
+        region: "{{ ec2_region }}"
+
+        # Optional variables
+        group: "{{ ec2_security_group|default(omit) }}"
+        key_name: "{{ ec2_key_name|default(omit) }}"
+        instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
+
+        # Derived or static variables
+        instance_tags: "{{ node_tag|combine(ec2_node_additional_tags|default({})) }}"
+        count_tag: "{{ node_tag }}"
+        wait: true
+      register: nodes
+
+    - name: Wait for SSH to come up on nodes
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 30
+        timeout: 320
+        state: started
+      with_items: "{{ master.instances + nodes.instances }}"
