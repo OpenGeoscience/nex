@@ -235,5 +235,5 @@ if __name__ == "__main__":
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/historical/day/atmos/tasmin/r1i1p1/v1.0/tasmin_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc',
         'http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/historical/day/atmos/tasmax/r1i1p1/v1.0/tasmax_day_BCSD_historical_r1i1p1_ACCESS1-0_1997.nc',
         'day_BCSD_historical_r1i1p1_ACCESS1-0_1997.parquet',
-        s3_url="s3a://kitware-nasanex/gddp_parquet",
+        hdfs_url="hdfs://localhost:9000/home/ubuntu/",
         overwrite=False)
