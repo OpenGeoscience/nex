@@ -1,11 +1,18 @@
 - hosts: master
   roles:
+    - role: generate_users
+      tags:
+        - users
     - role: nfs
       tags:
         - nfs
 
 - hosts: nodes
   roles:
+    - role: generate_users
+      tags:
+        - users
+
     - role: nfs
       tags:
         - nfs

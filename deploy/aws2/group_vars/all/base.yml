@@ -7,3 +7,9 @@ state: present
 
 # The user we will be ssh'ing into remote machines as
 ansible_user: ubuntu
+
+# Users that will exist on all systems in the cluster
+# The user on master will have private/public key access
+# to the corresponding user on each node
+cluster_users:
+  - ubuntu

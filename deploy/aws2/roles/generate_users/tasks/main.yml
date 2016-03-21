@@ -1,0 +1,9 @@
+---
+- name: Run master tasks
+  include: master.yml
+  when: inventory_hostname in groups["{{ master_group_name }}"]
+  with_items: "{{ cluster_users }}"
+
+- name: Run node tasks
+  include: nodes.yml
+  when: inventory_hostname not in groups["{{ master_group_name }}"]

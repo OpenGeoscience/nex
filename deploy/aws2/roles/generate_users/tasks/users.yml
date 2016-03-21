@@ -1,0 +1,14 @@
+---
+- name: "Create the {{ item.key }} user"
+  user:
+    name: "{{ item.key }}"
+  become: yes
+  become_user: root
+
+
+- name: "Add public key from master to the {{ item.key }} user"
+  authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ item.value }}"
+  become: yes
+  become_user: root
