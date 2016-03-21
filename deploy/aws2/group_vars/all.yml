@@ -34,6 +34,15 @@ ec2_region: us-west-2
 ec2_master_ami: ami-e0f7e081
 ec2_master_instance_type: t2.micro
 
+# Add volumes by specifying ec2_master_volumes
+# ec2_master_volumes:
+#   - device_name: /dev/sda1
+#   - volume_size: 1000
+#   - etc...
+#
+# See: http://docs.ansible.com/ansible/ec2_module.html for more information
+
+
 # Additional ec2 tags may be set on master with the following variable
 # ec2_master_additional_tags:
 #   example: tag
@@ -49,3 +58,11 @@ ec2_node_count: 1
 # Additional ec2 tags may be set on nodes with the following variable
 # ec2_node_additional_tags:
 #   example: tag
+
+# Add volumes by specifying ec2_node_volumes
+# ec2_node_volumes:
+#   - device_name: /dev/sda1
+#   - volume_size: 1000
+#   - etc...
+#
+# See: http://docs.ansible.com/ansible/ec2_module.html for more information

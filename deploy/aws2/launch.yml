@@ -13,7 +13,7 @@
         group: "{{ ec2_security_group|default(omit) }}"
         key_name: "{{ ec2_key_name|default(omit) }}"
         instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
-
+        volumes: "{{ ec2_master_volumes|default(omit) }}"
         # Derived or static variables
         instance_tags: "{{ master_tag|combine(ec2_master_additional_tags|default({})) }}"
         count_tag: "{{ master_tag }}"
@@ -32,6 +32,7 @@
         group: "{{ ec2_security_group|default(omit) }}"
         key_name: "{{ ec2_key_name|default(omit) }}"
         instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
+        volumes: "{{ ec2_node_volumes|default(omit) }}"
 
         # Derived or static variables
         instance_tags: "{{ node_tag|combine(ec2_node_additional_tags|default({})) }}"
