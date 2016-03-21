@@ -6,7 +6,8 @@
 
 IP_ADDR=$(aws --profile NEX ec2 \
               describe-instances \
-              --filter "Name=tag:ec2_pod_instance_name,Values=head" \
+              --filter "Name=tag:ec2_pod_instance_name,Values=master" \
+              --filter "Name=tag:ec2_pod,Values=kotfic_NEX" \
               --query Reservations[0].Instances[0].PublicIpAddress \
               --output text)
 

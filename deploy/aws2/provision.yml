@@ -1,0 +1,11 @@
+- hosts: master
+  roles:
+    - role: nfs
+      tags:
+        - nfs
+
+- hosts: nodes
+  roles:
+    - role: nfs
+      tags:
+        - nfs

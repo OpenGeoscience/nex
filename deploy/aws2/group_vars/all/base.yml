@@ -1,0 +1,9 @@
+---
+# Should be a unique value to prevent namespace collisions on ec2 or other providers
+prefix: pod
+
+# Default state for playbook modules
+state: present
+
+# The user we will be ssh'ing into remote machines as
+ansible_user: ubuntu

@@ -1,11 +1,3 @@
----
-# Should be a unique value to prevent namespace collisions on ec2 or other providers
-prefix: pod
-
-# Default state for playbook modules
-state: present
-
-
 # Tag used to name and to ensure an exact count of master
 master_tag:
   Name: "{{prefix}}_master"

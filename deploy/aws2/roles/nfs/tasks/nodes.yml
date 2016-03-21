@@ -1,0 +1,32 @@
+---
+- name: Set facts about Master
+  set_fact:
+    master_hostname: "{{ groups[nfs_master_group_name][0] }}"
+    master_private_ip: "{{ hostvars[groups[nfs_master_group_name][0]]['private_ip'] }}"
+
+- name: Install NFS node dependencies
+  apt:
+    name: nfs-common
+    update-cache: yes
+  become: yes
+  become_user: root
+
+- name: Create local directories
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  with_items: "{{ nfs_share_directories }}"
+  become: yes
+  become_user: root
+
+- name: Mount server directories
+  mount:
+    name: "{{ item }}"
+    src: "{{ master_private_ip }}:{{ item }}"
+    fstype: nfs
+    state: mounted
+  with_items: "{{ nfs_share_directories }}"
+  become: yes
+  become_user: root

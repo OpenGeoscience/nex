@@ -1,0 +1,12 @@
+# This variable is used to conditionally include the master.yml
+# or the nodes.yml file.  If the current host is in this group
+# Then an NFS server will be set up on that hose. Otherwise the
+# common nfs libraries will be installed and the
+# nfs_share_directories will be created and mounted from the
+# server.
+nfs_master_group_name: master
+
+# A list of directories to serve from the master node,  or
+# to mount on the slave nodes.
+nfs_share_directories:
+  - /public
