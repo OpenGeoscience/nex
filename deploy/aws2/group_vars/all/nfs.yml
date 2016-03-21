@@ -1,4 +1,4 @@
 # A list of directories to serve from the master node,  or
-# to mount on the slave nodes.
+# to mount on the slave nodes
 nfs_share_directories:
   - /public

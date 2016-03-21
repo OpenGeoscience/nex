@@ -9,6 +9,14 @@
   become: yes
   become_user: root
 
+- name: "Add authorized key to master for {{ item }}"
+  authorized_key:
+    user: "{{ item }}"
+    key: "{{ user_module_output.ssh_public_key }}"
+  become: yes
+  become_user: root
+
+
 - name: Set public key fact on master host
   set_fact:
     user_public_keys: "{{ user_public_keys|default({})|combine({ item: user_module_output.ssh_public_key }) }}"

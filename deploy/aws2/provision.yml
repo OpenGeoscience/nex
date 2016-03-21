@@ -6,6 +6,9 @@
     - role: nfs
       tags:
         - nfs
+    - role: hdfs
+      tags:
+        - hdfs
 
 - hosts: nodes
   roles:
@@ -16,3 +19,7 @@
     - role: nfs
       tags:
         - nfs
+
+    - role: hdfs
+      tags:
+        - hdfs
