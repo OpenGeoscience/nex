@@ -1,8 +1,8 @@
 ---
 - name: Set facts about Master
   set_fact:
-    master_hostname: "{{ groups[nfs_master_group_name][0] }}"
-    master_private_ip: "{{ hostvars[groups[nfs_master_group_name][0]]['private_ip'] }}"
+    master_hostname: "{{ groups[master_group_name][0] }}"
+    master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
 
 - name: Install NFS node dependencies
   apt:

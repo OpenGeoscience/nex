@@ -8,6 +8,16 @@ state: present
 # The user we will be ssh'ing into remote machines as
 ansible_user: ubuntu
 
+
+# This variable is used to conditionally include the master.yml
+# or the nodes.yml file.
+master_group_name: master
+
+# This variable is used in several places to provide a list of
+# IPs for things like Spark & HDFS slave files
+node_group_name: nodes
+
+
 # Users that will exist on all systems in the cluster
 # The user on master will have private/public key access
 # to the corresponding user on each node
