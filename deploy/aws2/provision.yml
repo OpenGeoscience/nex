@@ -27,6 +27,14 @@
       become_user: root
       tags: ["nfs", "restart", "restart_nfs"]
 
+    - name: Start/Restart YARN resourcemanager and nodemanagers
+      shell: >-
+        {{ hadoop_home }}/sbin/stop-yarn.sh &&
+        {{ hadoop_home }}/sbin/start-yarn.sh
+
+      tags: ["yarn", "restart", "restart_yarn"]
+
+
     - name: Start/Restart HDFS namenode and datanode daemons
       shell: >-
         {{ hadoop_home }}/sbin/stop-dfs.sh &&
@@ -35,12 +43,6 @@
       tags: ["hdfs", "restart", "restart_hdfs"]
 
 
-    - name: Start/Restart YARN resourcemanager and nodemanagers
-      shell: >-
-        {{ hadoop_home }}/sbin/stop-yarn.sh &&
-        {{ hadoop_home }}/sbin/start-yarn.sh
-
-      tags: ["yarn", "restart", "restart_yarn"]
 
     - name: Start/Restart spark master and slaves
       shell: >-

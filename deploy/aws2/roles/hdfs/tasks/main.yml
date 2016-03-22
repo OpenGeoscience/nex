@@ -97,7 +97,7 @@
       dest: "{{ hadoop_config }}/core-site.xml"
     - src: "yarn-site.xml.j2"
       dest: "{{ hadoop_config }}/yarn-site.xml"
-    - src: "core-site.xml.j2"
+    - src: "mapred-site.xml.j2"
       dest: "{{ hadoop_config }}/mapred-site.xml"
     - src: "slaves.j2"
       dest: "{{ hadoop_config }}/slaves"
