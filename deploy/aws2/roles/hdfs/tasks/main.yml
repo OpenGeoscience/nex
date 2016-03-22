@@ -3,6 +3,8 @@
   set_fact:
     master_hostname: "{{ groups[master_group_name][0] }}"
     master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
+  tags:
+    - update_hdfs_configs
 
 - name: Add Oracle repository
   apt_repository:
@@ -99,6 +101,8 @@
       dest: "{{ hadoop_config }}/mapred-site.xml"
     - src: "slaves.j2"
       dest: "{{ hadoop_config }}/slaves"
+  tags:
+    - update_hdfs_configs
 
 
 

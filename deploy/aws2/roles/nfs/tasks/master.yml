@@ -33,5 +33,3 @@
   with_items: "{{ nfs_share_directories }}"
   become: yes
   become_user: root
-  notify:
-    - restart NFS
