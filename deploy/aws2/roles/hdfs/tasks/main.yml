@@ -93,14 +93,18 @@
       dest: "{{ hadoop_config }}/hdfs-site.xml"
     - src: "core-site.xml.j2"
       dest: "{{ hadoop_config }}/core-site.xml"
+    - src: "yarn-site.xml.j2"
+      dest: "{{ hadoop_config }}/yarn-site.xml"
+    - src: "core-site.xml.j2"
+      dest: "{{ hadoop_config }}/mapred-site.xml"
     - src: "slaves.j2"
       dest: "{{ hadoop_config }}/slaves"
 
 
 
-#- name: Run master tasks
-#  include: master.yml
-#  when: inventory_hostname in groups["{{ master_group_name }}"]
+- name: Run master tasks
+  include: master.yml
+  when: inventory_hostname in groups["{{ master_group_name }}"]
 #
 # - name: Run node tasks
 #   include: nodes.yml
