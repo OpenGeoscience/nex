@@ -46,8 +46,17 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 ch.setFormatter(formatter)
 
-logger.addHandler(ch)
 
+sysh = logging.handlers.SysLogHandler(address=(master_hostname, 514))
+sysh.setLevel(logging.INFO)
+import socket
+
+formatter = logging.Formatter(socket.gethostname() + ' | %(asctime)s | %(name)s | %(levelname)s | %(message)s')
+sysh.setFormatter(formatter)
+
+
+logger.addHandler(ch)
+logger.addHandler(sysh)
 
 def build_url(opts):
     return ("http://nasanex.s3.amazonaws.com/NEX-GDDP/BCSD/"
@@ -142,6 +151,31 @@ def hadoop_copy_from_local(src, dest, overwrite=None, libjars=None):
 
     logger.info("Finished loading parquet to {}".format(
         dest))
+
+
+@app.task(bind=True, name="example.parquet_etl",
+          default_retry_delay=30, max_retries=3)
+def parquet_etl(self, s3_url, hdfs_url=None):
+    try:
+        directory = "/tmp/parquet_etl"
+        try:
+            os.makedirs(directory)
+        except OSError:
+            pass
+
+        local_file = os.path.join(directory, os.path.basename(s3_url))
+        logger.info("Downloading {} to {}".format(s3_url, local_file))
+
+        r = requests.get(s3_url, stream=True)
+
+        with open(local_file, 'wb') as fh:
+            for chunk in r.iter_content(chunk_size=1024 * 1024 * 100):
+                if chunk:
+                    fh.write(chunk)
+
+        logger.info("Finished Downloading file")
+    except Exception as exc:
+        raise self.retry(exc=exc)
 
 
 @app.task(bind=True, name="example.etl",
