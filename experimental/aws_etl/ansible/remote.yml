@@ -1,4 +1,4 @@
-- hosts: tag_Name_ec2_pod_kotfic_nex_head
+- hosts: tag_Name_kotfic_NEX_master
   tags:
     - nfs
   tasks:
@@ -44,6 +44,13 @@
       become: yes
       become_user: root
 
+    - name: Ensure git is on the master node
+      apt:
+        name: git
+      become: yes
+      become_user: root
+
+
     # NOTE:  before merging into master branch has to be changed
     - name: Clone NEX repo
       git:
@@ -51,7 +58,6 @@
         dest: /public/nex
         version: aws_etl
         ssh_opts: "-o StrictHostKeyChecking=no"
-        clone: no
 
     - name: Create .master file with IP for celery app
       shell: >-
@@ -61,9 +67,9 @@
   tags:
     - nfs
   vars:
-    master_hostname: "{{ groups['tag_Name_ec2_pod_kotfic_nex_head'][0] }}"
-    master_ip: "{{ hostvars[groups['tag_Name_ec2_pod_kotfic_nex_head'][0]]['ec2_ip_address'] }}"
-    master_private_ip: "{{ hostvars[groups['tag_Name_ec2_pod_kotfic_nex_head'][0]]['ec2_private_ip_address'] }}"
+    master_hostname: "{{ groups['tag_Name_kotfic_NEX_master'][0] }}"
+    master_ip: "{{ hostvars[groups['tag_Name_kotfic_NEX_master'][0]]['ec2_ip_address'] }}"
+    master_private_ip: "{{ hostvars[groups['tag_Name_kotfic_NEX_master'][0]]['ec2_private_ip_address'] }}"
   tasks:
 
     - name: Get nfs-kernel-server
@@ -92,7 +98,7 @@
       become_user: root
 
 
-- hosts: tag_Name_ec2_pod_kotfic_nex_head
+- hosts: tag_Name_kotfic_NEX_master
   become: yes
   become_user: root
   tags:
@@ -117,7 +123,7 @@
         - restart
         - restart_rabbitmq
 
-- hosts: tag_Name_ec2_pod_kotfic_nex_head
+- hosts: tag_Name_kotfic_NEX_master
   become: yes
   become_user: root
   tags:
@@ -126,6 +132,7 @@
     - name: Install celery dependencies
       apt:
         name: "{{ item }}"
+        update_cache: yes
       with_items:
         - python-dev
         - python-pip
@@ -136,7 +143,7 @@
         version: 3.1.20
 
 
-- hosts: tag_Name_ec2_pod_kotfic_nex_data
+- hosts: tag_Name_kotfic_NEX_node
   become: yes
   become_user: root
   vars:
@@ -150,6 +157,7 @@
     - name: Install celery dependencies
       apt:
         name: "{{ item }}"
+        update_cache: yes
       with_items:
         - python-dev
         - python-pip
@@ -189,10 +197,24 @@
         - restart
         - restart_celery
 
-- hosts: tag_Name_ec2_pod_kotfic_nex_head
+- hosts: tag_Name_kotfic_NEX_master
   tags:
     - scala
   tasks:
+    - name: Set up SBT source
+      shell: "echo \"deb https://dl.bintray.com/sbt/debian /\" | sudo tee -a /etc/apt/sources.list.d/sbt.list"
+      sudo: yes
+
+    - name: Add SBT key
+      shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823"
+      sudo: yes
+
+    - name: Install SBT
+      apt:
+        name: sbt
+        update-cache: yes
+      sudo: yes
+
     - name: Building ETL conversion JAR (this may take some time...)
       shell: >-
         sbt assembly
