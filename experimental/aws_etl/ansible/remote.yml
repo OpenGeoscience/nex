@@ -172,12 +172,16 @@
         src: celeryd.script
         dest: /etc/init.d/celeryd
         mode: 0755
+      tags:
+        - update_celery_configs
 
     - name: Install celeryd config script
       template:
         src: celeryd.conf
         dest: /etc/default/celeryd
         mode: 0640
+      tags:
+        - update_celery_configs
 
     - name: Create log and run directories
       file:
@@ -196,6 +200,7 @@
       tags:
         - restart
         - restart_celery
+        - update_celery_configs
 
 - hosts: tag_Name_kotfic_NEX_master
   tags:
