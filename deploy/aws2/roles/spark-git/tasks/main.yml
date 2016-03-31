@@ -1,0 +1,111 @@
+---
+# NOTE:  this whole process should actually compile/package
+#        spark version for distribution in the NFS directory then
+#        copy it to each of the individual locations
+
+- name: Set facts about Master
+  set_fact:
+    master_hostname: "{{ groups[master_group_name][0] }}"
+    master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
+    spark_home: "{{ spark_base_dir }}/spark/{{ spark_git_version }}"
+    spark_config: "{{ spark_base_dir }}/spark/{{ spark_git_version }}/conf"
+    spark_version: "{{ spark_git_version }}"
+  tags:
+    - always
+
+# These are technically required,  but will have been run by the HDFS role
+# If for some reason you want to use this spark role without the hdfs role
+# These tasks will also have to be run
+#
+# - name: Add Oracle repository
+#   apt_repository:
+#     repo: ppa:webupd8team/java
+#   become: yes
+#   become_user: root
+#
+# - name: Update APT
+#   apt:
+#     update_cache: yes
+#   become: yes
+#   become_user: root
+#
+# # https://coderwall.com/p/zzdapg/ansible-recipe-to-install-java-7-selecting-the-oracle-license
+# - name: Automatically select the Oracle License
+#   shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+#   become: yes
+#   become_user: root
+#
+#
+# - name: Install Oracle Java
+#   apt:
+#     name: "{{ item }}"
+#     state: latest
+#   with_items:
+#     - oracle-java7-installer
+#   become: yes
+#   become_user: root
+# - name: Globally disable host key checking
+#   lineinfile:
+#     dest: "/etc/ssh/ssh_config"
+#     regexp: "{{ item.regexp }}"
+#     line: "{{ item.line }}"
+#   with_items:
+#     - regexp: "#   StrictHostKeyChecking ask"
+#       line: "    StrictHostKeyChecking no"
+#   become: yes
+#   become_user: root
+
+- name: Update Apt cache
+  apt:
+    update_cache: yes
+  become: yes
+  become_user: root
+
+
+- name: Install Spark System dependencies
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - scala
+    - git
+  become: yes
+  become_user: root
+
+
+- name: Create spark_home directory
+  file:
+    path: "{{ spark_home }}/"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    state: directory
+
+
+- name: Clone spark repository
+  git:
+    repo: "https://github.com/apache/spark.git"
+    dest: "{{ spark_home }}/"
+    version: "{{ spark_git_version }}"
+
+- name: Build spark distribution
+  shell: >-
+    build/mvn -Pyarn -Phadoop-2.6 -DskipTests clean package
+  args:
+    chdir: "{{ spark_home }}"
+    creates: "core/dependency-reduced-pom.xml"
+
+- name: Copy Spark config files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode|default(omit) }}"
+  with_items:
+    - src: spark-env.sh.j2
+      dest: "{{ spark_config }}/spark-env.sh"
+      mode: "0755"
+    - src: slaves.j2
+      dest: "{{ spark_config }}/slaves"
+    - src: spark-defaults.conf.j2
+      dest: "{{ spark_config }}/spark-defaults.conf"
+  tags:
+    - update_spark_configs

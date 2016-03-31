@@ -1,0 +1,14 @@
+- name: Provision the master node
+  hosts: master
+  roles:
+    - role: spark-git
+      spark_git_version: "master"
+      tags: ["spark", "provision", "provision_spark"]
+
+
+- name: Provision the regular nodes
+  hosts: nodes
+  roles:
+    - role: spark-git
+      spark_git_version: "master"
+      tags: ["spark", "provision", "provision_spark"]
