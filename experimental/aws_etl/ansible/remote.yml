@@ -56,7 +56,7 @@
       git:
         repo: git@github.com:OpenGeoscience/nex.git
         dest: /public/nex
-        version: aws_etl
+        version: master
         ssh_opts: "-o StrictHostKeyChecking=no"
 
     - name: Create .master file with IP for celery app
