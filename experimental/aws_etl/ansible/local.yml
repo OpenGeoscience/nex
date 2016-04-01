@@ -1,0 +1,249 @@
+- hosts: vagrant
+  become: yes
+  become_user: root
+  vars:
+    default_user: vagrant
+  tags:
+    - setup
+  tasks:
+    - name: Add Oracle repository
+      apt_repository:
+        repo: ppa:webupd8team/java
+
+    - name: Update apt
+      apt:
+        update_cache: yes
+
+    # https://coderwall.com/p/zzdapg/ansible-recipe-to-install-java-7-selecting-the-oracle-license
+    - name: Automatically select the Oracle License
+      shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: latest
+        force: yes
+      with_items:
+        - htop
+        - rsync
+        - oracle-java7-installer
+
+    - name: Change ownership of /opt
+      file:
+        path: /opt
+        owner: vagrant
+        group: vagrant
+
+    - name: Globally disable host key checking on the virtualbox
+      lineinfile:
+        dest: "/etc/ssh/ssh_config"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - regexp: "#   StrictHostKeyChecking ask"
+          line: "    StrictHostKeyChecking no"
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+    hadoop_home: /opt/hadoop/2.7.1
+  tags:
+    - hadoop
+  tasks:
+    - name: Download Hadoop
+      get_url:
+        url: http://shinyfeather.com/hadoop/common/hadoop-2.7.1/hadoop-2.7.1.tar.gz
+        dest: /opt/hadoop-2.7.1.tar.gz
+        force: no
+
+    - name: Unarchive Hadoop
+      unarchive:
+        src: /opt/hadoop-2.7.1.tar.gz
+        dest: /opt/
+        copy: no
+        creates: /opt/hadoop/2.7.1/
+
+    - name: Make Hadoop directory
+      file:
+        state: directory
+        path: "/opt/hadoop"
+
+    - name: Move Hadoop
+      shell: "mv -f /opt/hadoop-2.7.1 {{ hadoop_home }}"
+
+    - name: Setup JAVA_HOME
+      lineinfile:
+        dest: "{{ hadoop_home }}/etc/hadoop/hadoop-env.sh"
+        regexp: "^export JAVA_HOME="
+        line: "export JAVA_HOME=/usr/lib/jvm/java-7-oracle"
+
+    - name: Copy Hadoop Config files for pseudo-distributed mode
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - src: "hdfs-site.xml"
+          dest: "{{ hadoop_home }}/etc/hadoop/hdfs-site.xml"
+        - src: "core-site.xml"
+          dest: "{{ hadoop_home }}/etc/hadoop/core-site.xml"
+      tags:
+        - test
+
+    - name: Copy Vagrant private key
+      copy:
+        src: ../.vagrant/machines/default/virtualbox/private_key
+        dest: /home/vagrant/.ssh/id_rsa
+        mode: 0600
+
+    - name: Format the namenode
+      shell: >-
+        {{ hadoop_home }}/bin/hdfs namenode -format -force
+
+    - name: Start NameNode and DataNode daemon
+      shell: >-
+        {{ hadoop_home }}/sbin/start-dfs.sh
+
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+    spark_home: /opt/spark-1.6.0-bin-hadoop2.6/
+  tags:
+    - spark
+  tasks:
+    - name: Download Spark
+      get_url:
+        url: "http://mirror.cc.columbia.edu/pub/software/apache/spark/spark-1.6.0/spark-1.6.0-bin-hadoop2.6.tgz"
+        dest: "/opt/spark-1.6.0-bin-hadoop2.6.tgz"
+        force: no
+
+    - name: Unarchive spark
+      unarchive:
+        src: /opt/spark-1.6.0-bin-hadoop2.6.tgz
+        dest: /opt/
+        copy: no
+        creates: "{{ spark_home }}/"
+
+    - name: Start Master
+      shell: >-
+        {{ spark_home }}/sbin/stop-master.sh &&
+        {{ spark_home }}/sbin/start-master.sh -h localhost
+
+    - name: Start Slave
+      shell: >-
+        {{ spark_home }}/sbin/stop-slave.sh &&
+        {{ spark_home }}/sbin/start-slave.sh spark://localhost:7077
+
+
+- hosts: vagrant
+  become: yes
+  become_user: root
+  vars:
+    default_user: vagrant
+    celery_app: gddp_etl
+    celery_dir: /vagrant
+    celery_user: vagrant
+    celery_group: vagrant
+  tags:
+    - celery
+  tasks:
+    - name: Install system packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - build-essential
+        - rabbitmq-server
+        - python-dev
+        - python-pip
+
+    - name: Install celery
+      pip:
+        name: celery
+        version: 3.1.20
+
+    - name: Install celeryd init script
+      copy:
+        src: celeryd.script
+        dest: /etc/init.d/celeryd
+        mode: 0755
+
+    - name: Install celeryd config script
+      template:
+        src: celeryd.conf
+        dest: /etc/default/celeryd
+
+    - name: Add master url to .master file in gddp_etl
+      shell: >-
+        echo "localhost" > /vagrant/gddp_etl/.master
+
+    - name: Start celeryd service
+      service:
+        name: celeryd
+        state: started
+
+
+- hosts: vagrant
+  vars:
+    default_user: vagrant
+  tags:
+    - scala
+  tasks:
+    - name: Create source directory
+      file:
+        state: directory
+        path: /home/vagrant/src/
+
+    - name: Get scala 2.11.4
+      get_url:
+        url: "http://downloads.typesafe.com/scala/2.11.4/scala-2.11.4.deb"
+        dest: /home/vagrant/src/scala-2.11.4.deb
+        force: no
+
+    - name: Install scala Deb
+      apt:
+        deb: /home/{{ ansible_env.USER }}/src/scala-2.11.4.deb
+      become: yes
+      become_user: root
+
+
+    - name: Set up SBT source
+      shell: "echo \"deb https://dl.bintray.com/sbt/debian /\" | sudo tee -a /etc/apt/sources.list.d/sbt.list"
+      become: yes
+      become_user: root
+
+
+    - name: Add SBT key
+      shell: "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823"
+      become: yes
+      become_user: root
+
+
+    - name: Install SBT
+      apt:
+        name: sbt
+        update-cache: yes
+      become: yes
+      become_user: root
+
+    - name: Create /public directory
+      file:
+        state: directory
+        owner: vagrant
+        group: vagrant
+        path: /public
+      become: yes
+      become_user: root
+
+    # Submodule issues prevent using andible 'git' module
+    - name: Clone Git Repo
+      shell: >-
+        git clone https://github.com/OpenGeoscience/nex.git /public/nex
+      args:
+        creates: /public/nex
+
+    - name: Building ETL conversion JAR (this may take some time...)
+      shell: >-
+        sbt assembly
+      args:
+        chdir: /public/nex/src/parquet
+        creates: /public/nex/src/parquet/target/scala-2.11/parquet-assembly-1.0.jar

@@ -1,6 +1,8 @@
 ---
 
 - include: instantiate.yml
+  tags:
+    - always
 - include: filesystem.yml
 
 - hosts: head
@@ -19,9 +21,64 @@
   tags:
     - hdfs
 
+- hosts: head
+  vars:
+    hdfs_user: hdfs
+    hdfs_group: hadoop
+    hadoop_home: "/opt/hadoop/2.7.1/"
+    hadoop_conf: "{{ hadoop_home }}etc/hadoop/"
+  roles:
+    - role: upstart
+      name: yarn-resourcemanager
+      user: "{{ hdfs_user }}"
+      group: "{{ hdfs_group }}"
+      description: "Run YARN resource manager"
+      command: >-
+        "{{ hadoop_home }}bin/yarn"
+        --config "{{ hadoop_conf }}" resourcemanager
+    - role: yarn
+      hdfs_namenode_ansible_group: head
+      hdfs_net_interface: eth0
+  tasks:
+    - name: Start Resource Manager
+      service:
+        name: yarn-resourcemanager
+        state: started
+  tags:
+    - yarn
+
+- hosts: datanodes
+  vars:
+    hdfs_user: hdfs
+    hdfs_group: hadoop
+    hadoop_home: "/opt/hadoop/2.7.1/"
+    hadoop_conf: "{{ hadoop_home }}etc/hadoop/"
+  roles:
+    - role: upstart
+      name: yarn-nodemanager
+      user: "{{ hdfs_user }}"
+      group: "{{ hdfs_group }}"
+      description: "Run YARN nodemanager"
+      command: >-
+        "{{ hadoop_home }}bin/yarn"
+        --config "{{ hadoop_conf }}" nodemanager
+    - role: yarn
+      hdfs_namenode_ansible_group: head
+      hdfs_net_interface: eth0
+  tasks:
+    - name: Start Resource Manager
+      service:
+        name: yarn-nodemanager
+        state: started
+  tags:
+    - yarn
+
+
+
 - hosts: spark
   roles:
     - role: spark-standalone-install
+      spark_version: 1.6.0
       ssh_key_exchange_ansible_group: spark
       spark_executor_memory: "12G"
       spark_driver_memory: "12G"
