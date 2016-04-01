@@ -12,3 +12,7 @@ hadoop_version: 2.7.2
 # hadoop's home directory
 hadoop_home: "{{ hadoop_base_dir }}/hadoop/{{ hadoop_version }}"
 hadoop_config: "{{ hadoop_home }}/etc/hadoop"
+
+hadoop_dfs_root: "/data/dfs"
+hadoop_dfs_namenode_name_dir: "{{ hadoop_dfs_root }}/namenode"
+hadoop_dfs_datanode_data_dir: "{{ hadoop_dfs_root }}/datanode"

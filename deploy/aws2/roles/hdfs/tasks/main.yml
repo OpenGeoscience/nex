@@ -104,6 +104,16 @@
   tags:
     - update_hdfs_configs
 
+- name: Create Data directory
+  file:
+    path: "{{ hadoop_dfs_root }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    recurse: yes
+    state: directory
+  become: yes
+  become_user: root
+
 
 
 - name: Run master tasks
