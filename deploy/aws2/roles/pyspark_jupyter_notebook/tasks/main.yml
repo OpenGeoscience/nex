@@ -1,0 +1,33 @@
+---
+
+- name: Install jupyter notebook
+  pip:
+    name: "{{ item }}"
+  with_items:
+    - jupyter
+    - py4j
+  become: yes
+  become_user: root
+
+- name: Create directories
+  file:
+    path: "/home/{{ ansible_user }}/.jupyter/kernels/pyspark_{{ spark_version }}/"
+    state: directory
+    mode: 0755
+
+- name: Copy notebook config
+  template:
+    src: jupyter_notebook_config.py.j2
+    dest: "/home/{{ ansible_user }}/.jupyter/jupyter_notebook_config.py"
+
+- name: Copy pyspark kernel config
+  template:
+    src: kernel.json.j2
+    dest: "/home/{{ ansible_user }}/.jupyter/kernels/pyspark_{{spark_version}}/kernel.json"
+
+- name: Install pyspark kernel
+  shell: >-
+    jupyter kernelspec install
+    --replace /home/{{ ansible_user }}/.jupyter/kernels/pyspark_{{ spark_version}}
+  become: yes
+  become_user: root

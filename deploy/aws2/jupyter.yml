@@ -1,0 +1,14 @@
+- name: Add Jupyter notebook kernels
+  hosts: master
+  roles:
+    - name: Provision pyspark kernel with spark from master
+      role: pyspark_jupyter_notebook
+      spark_home: "/opt/spark/master"
+      spark_version: "master"
+      tags: ["notebook", "provision", "provision_notebook"]
+
+    - name: Provision pyspark kernel with spark from 1.6.1
+      role: pyspark_jupyter_notebook
+      spark_home: "/opt/spark/1.6.1"
+      spark_version: "1.6.1"
+      tags: ["notebook", "provision", "provision_notebook"]

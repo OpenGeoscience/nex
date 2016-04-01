@@ -5,7 +5,6 @@
       spark_git_version: "master"
       tags: ["spark", "provision", "provision_spark"]
 
-
 - name: Provision the regular nodes
   hosts: nodes
   roles:
