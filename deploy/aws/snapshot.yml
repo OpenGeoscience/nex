@@ -7,7 +7,7 @@
   tasks:
     - set_fact: snapshot_tag="{{lookup('pipe', 'date +%Y%m%dT%H%M') }}"
     - set_fact: aws_access_key="{{ lookup('pipe', 'echo $AWS_ACCESS_KEY_ID') }}"
-    - set_fact: aws_secret_key="{{ lookup('pipe', 'echo AWS_SECRET_ACCESS_KEY') }}"
+    - set_fact: aws_secret_key="{{ lookup('pipe', 'echo $AWS_SECRET_ACCESS_KEY') }}"
 
 
 

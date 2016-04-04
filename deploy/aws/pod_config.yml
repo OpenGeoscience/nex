@@ -84,4 +84,4 @@
                   - datanodes
                   - spark-slaves
                 volumes:
-                  sdb: 3000
+                  sdb: 1000

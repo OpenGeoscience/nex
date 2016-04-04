@@ -13,10 +13,9 @@
         state: running
         region: us-west-2
         default_image: ami-e0f7e081
+        ec2_instance_profile_name: NEX
         rules: "{{ ec2_pod_spec.rules }}"
         hosts: "{{ ec2_pod_spec.hosts }}"
 
     tags:
-      - test
-      - hdfs
-      - spark
+      - always
