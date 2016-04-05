@@ -2,12 +2,14 @@
   hosts: master
   roles:
     - role: spark-git
-      spark_git_version: "master"
+      # Tip of master 2016-04-05 09:50:51 EST
+      spark_git_version: "78071736799b6c86b5c01b27395f4ab87075342b"
       tags: ["spark", "provision", "provision_spark"]
 
 - name: Provision the regular nodes
   hosts: nodes
   roles:
     - role: spark-git
-      spark_git_version: "master"
+      # Tip of master 2016-04-05 09:50:51 EST
+      spark_git_version: "78071736799b6c86b5c01b27395f4ab87075342b"
       tags: ["spark", "provision", "provision_spark"]

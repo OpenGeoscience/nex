@@ -1,0 +1,32 @@
+domain: "cluster.dev"
+ansible:
+  verbose: ""
+  plays:
+    - playbook: "hosts-files.yml"
+    - playbook: "../aws2/provision.yml"
+nodes:
+  head:
+    memory: 4096
+    cpus: 2
+    ports:
+      hdfs_web_ui: "50070:50070"
+      spark_web_ui: "8080:8080"
+      spark_master: "7077:7077"
+      yarn_resource_manager_ui: "8088:8088"
+    roles:
+      - master
+    mount:
+      - src: "../../"
+        dest: "/public/nex"
+
+  data-01:
+    memory: 4096
+    cpus: 2
+    roles:
+      - nodes
+
+  data-02:
+    memory: 4096
+    cpus: 2
+    roles:
+      - nodes

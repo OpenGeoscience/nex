@@ -1,10 +1,19 @@
 ---
+- name: Make sure pip is available
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - python-dev
+    - python-pip
+  become: yes
+  become_user: root
 
 - name: Install jupyter notebook
   pip:
     name: "{{ item }}"
   with_items:
     - jupyter
+    - ipyparallel
     - py4j
   become: yes
   become_user: root

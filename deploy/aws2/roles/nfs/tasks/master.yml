@@ -11,10 +11,12 @@
   shell: >-
     curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/ 2>/dev/null | head -n 1)vpc-ipv4-cidr-block
   register: vpc_cidr_command
+  when: vpc_cidr is not defined
 
 - name: Set vpc_cidr
   set_fact:
     vpc_cidr: "{{ vpc_cidr_command.stdout }}"
+  when: vpc_cidr is not defined
 
 - name: Create local directories
   file:

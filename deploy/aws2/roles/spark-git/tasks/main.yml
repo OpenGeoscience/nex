@@ -75,11 +75,11 @@
 
 - name: Create spark_home directory
   file:
-    path: "{{ spark_home }}/"
+    path: "{{ spark_home }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+    mode: 0755
     state: directory
-
 
 - name: Clone spark repository
   git:
