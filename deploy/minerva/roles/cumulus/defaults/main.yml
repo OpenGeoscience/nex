@@ -1,0 +1,15 @@
+---
+cumulus_version: master
+
+cumulus_install_root: /opt/cumulus/{{ cumulus_version }}/cumulus
+cumulus_plugin_root: "{{ cumulus_install_root }}/girder/cumulus"
+
+cumulus_data_root: /data/cumulus/{{ cumulus_version }}
+cumulus_keys_directory: "{{ cumulus_data_root }}/keys"
+
+cumulus_repo: git@github.com:Kitware/cumulus.git
+
+girder_user: girder
+
+celery_user: "{{ girder_user }}"
+celery_group: "{{ girder_user }}"
