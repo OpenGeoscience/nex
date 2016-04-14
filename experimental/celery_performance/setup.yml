@@ -1,0 +1,141 @@
+- name: Personal Setup
+  hosts: tag_group_celery_perftest
+  become: yes
+  tags:
+    - personal
+  tasks:
+    - name: Development setup
+      apt:
+        update_cache: yes
+        name: "{{ item }}"
+      with_items:
+        - git
+        - emacs24-nox
+        - ipython
+        - mosh
+
+    - name: Install pip
+      shell: "curl https://bootstrap.pypa.io/get-pip.py | sudo python -"
+
+    - name: set up packages
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - jedi
+        - epc
+
+    - name: Setup emacs
+      git:
+        repo: https://github.com/kotfic/emacs-config.git
+        dest: ~/.emacs.d
+      become: no
+
+    - name: copy ssh keys so we can commit to github
+      copy:
+        src: ~/.ssh/id_rsa
+        dest: ~/.ssh/id_rsa
+        mode: 0600
+      become: no
+
+
+- name: Gather facts
+  hosts: tag_group_celery_perftest
+  become: yes
+  tags:
+    - always
+  tasks:
+    - name: Gather ec2 facts
+      action: ec2_facts
+
+- name: Configure master
+  hosts: tag_Name_celery_master
+  become: yes
+  vars:
+    master_url: "{{ hostvars[groups['tag_Name_celery_master'][0]]['ec2_dns_name'] }}"
+  tags:
+    - nfs
+    - nfs_master
+  tasks:
+    - name: Install system packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - nfs-kernel-server
+        - rabbitmq-server
+
+    - name: create /public
+      file:
+        path: /public
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+
+    - name: setup /etc/exports
+      template:
+        src: exports.j2
+        dest: /etc/exports
+
+    - name: start NFS
+      service:
+        name: nfs-kernel-server
+        state: started
+
+    - name: checkout NEX repo
+      git:
+        repo: git@github.com:OpenGeoscience/nex.git
+        dest: /public/nex
+        accept_hostkey: true
+      become: no
+      tags:
+        - celery
+
+    - name: template out celery master config
+      shell: >-
+        echo "{{ master_url }}" > perftest/.master_hostname
+      args:
+        chdir: /public/nex/experimental/celery_performance/
+      become: no
+      tags:
+        - test
+
+
+- name: Configure workers
+  hosts: tag_Name_celery_worker
+  become: yes
+  vars:
+    master_url: "{{ hostvars[groups['tag_Name_celery_master'][0]]['ec2_dns_name'] }}"
+  tags:
+    - nfs
+    - nfs_worker
+  tasks:
+    - name: Install system packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - nfs-common
+
+    - name: create /public
+      file:
+        path: /public
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+
+    - name: mount /public
+      mount:
+        name: /public
+        src: "{{ master_url }}:/public"
+        fstype: nfs
+        state: mounted
+
+
+- name: Gather facts
+  hosts: tag_group_celery_perftest
+  become: yes
+  tags:
+    - celery
+  tasks:
+    - name: install requirements
+      pip:
+        chdir: /public/nex/experimental/celery_performance/
+        requirements: requirements.txt

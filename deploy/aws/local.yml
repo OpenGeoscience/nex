@@ -45,8 +45,6 @@
         - ipython[notebook]
         - ipyparallel
         - avro
-        - matplotlib
-        - seaborn
       sudo: yes
 
 # Intermittent compile errors with pydoop
@@ -77,7 +75,8 @@
 
 - hosts: head
   user: ubuntu
-
+  tags:
+    - local
   tasks:
     - name: generate ip.list
       local_action: command /home/kotfic/kitware/projects/NEX/aws/get_cluster_ips.sh
@@ -113,7 +112,9 @@
       sudo: yes
 
     - name: Install SBT
-      shell: "apt-get update && apt-get install sbt"
+      apt:
+        name: sbt
+        update-cache: yes
       sudo: yes
 
     - name: Setup ensime plugin
@@ -140,6 +141,12 @@
         - all_files.txt
         - 1997_files.txt
         - ip.list
+        - all.sh
+
+    - name: All is a script
+      file:
+        path: /home/ubuntu/all.sh
+        mode: 0755
 
     - name: copy ssh config and private key
       copy:

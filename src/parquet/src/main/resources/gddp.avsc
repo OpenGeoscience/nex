@@ -1,0 +1,14 @@
+{
+    "type": "record",
+    "name": "GDDP",
+    "doc": "Avro schema for GDDP record",
+    "fields": [
+        {"name": "lat", "type": "float"},
+        {"name": "lon", "type": "float"},
+        {"name": "time", "type": "long"},
+        {"name": "model", "type": "string"},
+        {"name": "pr", "type": "float"},
+        {"name": "tasmin", "type": "float"},
+        {"name": "tasmax", "type": "float"}
+    ]
+}

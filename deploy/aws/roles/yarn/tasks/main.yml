@@ -1,0 +1,8 @@
+---
+- name: Add mapred and yarn templates
+  template:
+    src: "{{ item }}.xml.j2"
+    dest: "{{ hadoop_conf }}/{{ item }}.xml"
+  with_items:
+    - mapred-site
+    - yarn-site

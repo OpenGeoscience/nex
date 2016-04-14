@@ -5,4 +5,8 @@ docker_spark_cluster/opt
 .idea/
 *.iml
 *.ensime
+*.pyc
+*.retry
+/deploy/keys
 .vagrant/
+/experimental/aws_etl/gddp_etl/.master
