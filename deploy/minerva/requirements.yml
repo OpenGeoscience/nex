@@ -1,0 +1,5 @@
+---
+- src: dstil.upstart
+  name: upstart
+
+- src: Stouts.rabbitmq
