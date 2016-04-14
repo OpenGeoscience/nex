@@ -1,8 +1,0 @@
----
-
-dependencies:
-  - role: git-cache
-    repo: git://github.com/kitware/cumulus.git
-    version: "{{ cumulus_version }}"
-    variable_prefix: cumulus
-    state: present
