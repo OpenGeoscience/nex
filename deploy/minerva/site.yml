@@ -20,27 +20,31 @@
     girder_path: "{{ girder_base_path }}/{{ girder_version }}"
     girder_user: "girder"
 
+    cumulus_version: master
+    cumulus_celery_user: celery
 
   pre_tasks:
-    - name: Create user
+    - name: Create users
       user:
-        name: "{{ girder_user }}"
+        name: "{{ item }}"
       become: yes
       become_user: root
+      with_items:
+        - "{{ girder_user }}"
+        - "{{ cumulus_celery_user }}"
 
   roles:
     - role: girder
       become: yes
       become_user: "{{ girder_user }}"
 
-################3
-
-#     - role: cumulus
-#       do_girder_install: yes
-#       become: Yes
-#       become_user: "{{ girder_user }}"
-#       tags:
-#         - cumulus
+    - role: cumulus
+      girder_plugins:
+        - cumulus
+      become: Yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - cumulus
 #
 #     - role: minerva
 #       state: started

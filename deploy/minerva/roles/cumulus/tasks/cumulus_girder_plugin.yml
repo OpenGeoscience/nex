@@ -1,0 +1,19 @@
+---
+
+- set_fact: plugin_name="{{ item }}"
+
+# - name: Install cumulus girder plugin python dependencies
+#   pip:
+#     requirements: "{{cumulus_plugin_root}}/{{ plugin_name }}/requirements.txt"
+#     virtualenv: "{{ girder_venv | default(omit) }}"
+
+- name: Install cumulus girder plugin
+  shell: "girder-install plugin -s -f {{ cumulus_plugin_root }}/{{plugin_name}}"
+  when: girder_venv is not defined
+
+
+- name: Install cumulus girder plugin
+  shell: >-
+    . {{ girder_venv }}/bin/activate &&
+    girder-install plugin -s -f {{ cumulus_plugin_root }}/{{plugin_name}}
+  when: girder_venv is defined

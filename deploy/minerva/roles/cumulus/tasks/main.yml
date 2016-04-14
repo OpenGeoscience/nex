@@ -1,81 +1,22 @@
 ---
+- command: whoami
+  register: role_user_output
+  changed_when: false
 
-- name: cumulus | install root | create
+- name: Install cumulus base directory
   file:
-    path: "{{ cumulus_install_root }}"
+    path: "{{ cumulus_base_path }}"
     state: directory
-    group: "{{ celery_group }}"
-    owner: "{{ celery_user }}"
-    mode: 0775
-  when: do_install|bool
-  become: yes
-  become_user: root
-
-- name: cumulus | data root | create
-  file:
-    path: "{{ cumulus_data_root }}"
-    state: directory
-    group: "{{ celery_group }}"
-    owner: "{{ celery_user }}"
+    group: "{{ role_user_output.stdout }}"
+    owner: "{{ role_user_output.stdout }}"
     mode: 0755
-  when: do_install|bool
   become: yes
   become_user: root
 
-- name: cumulus | key directory | create
-  file:
-    path: "{{ cumulus_keys_directory }}"
-    state: directory
-    group: "{{ celery_group }}"
-    owner: "{{ celery_user }}"
-    mode: 0700
-  when: do_install|bool
+- include: install_cumulus.yml
+  when: girder_venv is defined
+
+- include: install_cumulus.yml
+  when: girder_venv is not defined
   become: yes
   become_user: root
-
-- name: cumulus | repo | sync
-  git:
-    repo: "{{ cumulus_repo }}"
-    dest: "{{ cumulus_install_root }}"
-    version: "{{ cumulus_version }}"
-    accept_hostkey: yes
-
-- name: Get local host name, used in Vagrant deployment
-  command: hostname --fqdn
-  register: local_hostname
-
-- name: cumulus | create config.json
-  template:
-    src: config.json.j2
-    dest: "{{cumulus_install_root}}/cumulus/conf/config.json"
-    mode: 0640
-    owner: "{{ celery_user }}"
-    group: "{{ celery_group }}"
-
-- name: cumulus | install | python dependencies
-  pip:
-    requirements: "{{cumulus_install_root}}/requirements.txt"
-  when: do_install|bool
-  become: yes
-  become_user: root
-
-- name: cumulus | install | cumulus
-  pip:
-    chdir: "{{ cumulus_install_root }}"
-    name: "."
-    extra_args: "-e"
-  become: yes
-  become_user: root
-
-- name: cumulus | set | egg | permissions
-  file:
-    path: "{{ cumulus_install_root }}"
-    recurse: true
-    state: directory
-    owner: "{{ celery_user }}"
-    group: "{{ girder_user }}"
-    mode: g+w
-
-- name: cumulus | install | girder | plugin
-  include: girder.yml
-  when: do_girder_install|bool
