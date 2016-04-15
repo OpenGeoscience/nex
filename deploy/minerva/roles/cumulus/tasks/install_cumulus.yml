@@ -30,13 +30,13 @@
   become: yes
   become_user: root
 
-- name: cumulus | install | python dependencies
+- name: Install cumulus python dependencies
   pip:
     requirements: "{{cumulus_install_root}}/requirements.txt"
     virtualenv: "{{ girder_venv | default(omit) }}"
 
 
-- name: cumulus | install | cumulus
+- name: Install Cumulus
   pip:
     name: "."
     editable: yes
@@ -49,4 +49,4 @@
     dest: "{{ girder_path }}/plugins/{{ item }}"
     src: "{{cumulus_plugin_root}}/{{ item }}"
     state: link
-  with_items: "{{ girder_plugins }}"
+  with_items: "{{ cumulus_girder_plugins }}"

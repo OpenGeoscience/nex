@@ -27,36 +27,42 @@
       become_user: "{{ girder_user }}"
 
     - role: cumulus
-      girder_plugins:
+      cumulus_girder_plugins:
         - cumulus
       become: Yes
       become_user: "{{ girder_user }}"
       tags:
         - cumulus
-#
-#     - role: minerva
-#       state: started
-#       minerva_version: "cumulus-frontend-integration"
-#       tags:
-#         - minerva
-#         - config
-#
-#     - role: upstart
-#       service_name: "girder"
-#       service_chdir: "{{ girder_path }}"
-#       service_user: "{{ girder_user }}"
-#       service_exec: "python -m girder"
-#
-#   tasks:
-#     - name: cumulus_frontend | install | plugin
-#       shell: >
-#         . {{ girder_venv_root }}/bin/activate &&
-#         girder-install plugin -s -f {{ minerva_install_root }}/plugins/cumulus_frontend
-#       become: yes
-#       become_user: girder
-#       tags:
-#         - config
-#
+
+    - role: minerva
+      minerva_girder_plugins:
+        - cumulus_frontend
+      become: yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - minerva
+
+    - role: upstart
+      service_name: "girder"
+      service_chdir: "{{ girder_path }}"
+      service_user: "{{ girder_user }}"
+      service_exec: "python -m girder"
+      service_venv: "{{ girder_venv }}"
+      service_log_file: "{{ girder_path }}/logs/girder.log"
+      become: yes
+      become_user: root
+      tags:
+        - foo
+
+  tasks:
+    - name: Build frontend assets
+      shell: >
+        . {{ girder_venv }}/bin/activate && girder-install web
+      become: yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - config
+
 - name: Configure girder
   hosts: girder
   vars:
@@ -70,16 +76,16 @@
         name: girder-client
         version: 1.1.1
         virtualenv: "{{ girder_venv }}"
-      when: girder_venv is defined
-
-    - name: Install girder client
-      pip:
-        name: girder-client
-        version: 1.1.1
-        virtualenv: "{{ girder_venv }}"
-      when: girder_venv is not defined
       become: yes
-      become_user: root
+      become_user: "{{ girder_user }}"
+
+    - name: Wait for girder to be up and running
+      wait_for:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        delay: 5
+      tags:
+        - foo
 
     - name: Create 'admin' User
       girder:
@@ -142,10 +148,9 @@
         username: "admin"
         password: "letmein"
         plugins:
-
           - cumulus
-#          - minerva
-#          - cumulus_frontend
+          - minerva
+          - cumulus_frontend
         state: present
 
     - name: Restart the server

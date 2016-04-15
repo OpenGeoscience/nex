@@ -9,3 +9,5 @@ girder_user: "girder"
 
 cumulus_version: master
 cumulus_celery_user: celery
+
+minerva_version: master
