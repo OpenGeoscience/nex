@@ -54,15 +54,6 @@
       tags:
         - foo
 
-  tasks:
-    - name: Build frontend assets
-      shell: >
-        . {{ girder_venv }}/bin/activate && girder-install web
-      become: yes
-      become_user: "{{ girder_user }}"
-      tags:
-        - config
-
 - name: Configure girder
   hosts: girder
   vars:
@@ -71,13 +62,14 @@
     - config
     - cumulus
   tasks:
+    # This has to be installed system wide so girder module
+    # (which won't be running in the virtualenv) has access
     - name: Install girder client
       pip:
         name: girder-client
         version: 1.1.1
-        virtualenv: "{{ girder_venv }}"
       become: yes
-      become_user: "{{ girder_user }}"
+      become_user: root
 
     - name: Wait for girder to be up and running
       wait_for:
@@ -153,11 +145,21 @@
           - cumulus_frontend
         state: present
 
+
     - name: Restart the server
-      girder:
-        host: "{{ ansible_default_ipv4['address'] }}"
-        port: "{{ girder_port }}"
-        username: "admin"
-        password: "letmein"
-        put:
-          path: "system/restart"
+      service:
+        name: girder
+        state: restarted
+      become: yes
+      become_user: root
+
+
+    - name: Build/Rebuild frontend assets
+      shell: >
+        npm install --production
+      args:
+        chdir: "{{ girder_path }}"
+      become: yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - config

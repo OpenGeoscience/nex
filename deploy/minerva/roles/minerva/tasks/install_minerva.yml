@@ -49,6 +49,12 @@
       regexp: "romanesco"
       state: absent
 
+  - name: Hack out trailing comma on plugin list
+    replace:
+      dest: "{{ minerva_install_root }}/plugin.json"
+      regexp: '^\s+"jobs",'
+      replace: '        "jobs"'
+
   - name: Install minerva plugin
     file:
       dest: "{{ girder_path }}/plugins/minerva"

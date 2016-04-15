@@ -1,7 +1,7 @@
 ---
 install_base_path: "/opt"
 
-girder_version: master
+girder_version: v1.5.0
 girder_base_path: "{{ install_base_path }}/girder"
 girder_venv: "{{ girder_base_path }}/.venv"
 girder_path: "{{ girder_base_path }}/{{ girder_version }}"
