@@ -163,3 +163,12 @@
       become_user: "{{ girder_user }}"
       tags:
         - config
+
+
+- hosts: rabbitmq
+  roles:
+    - role: celery
+      celery_user: "{{ cumulus_celery_user }}"
+      celery_group: "{{ cumulus_celery_user }}"
+      celery_app: "cumulus"
+      celery_app_dir: "{{ cumulus_install_root }}"
