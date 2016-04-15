@@ -1,4 +1,7 @@
 ---
+- fail: msg="girder_path must be defined"
+  when: girder_path is not defined
+
 - command: whoami
   register: role_user_output
   changed_when: false

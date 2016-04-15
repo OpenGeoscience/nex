@@ -11,18 +11,6 @@
 
 - name: Deploy girder
   hosts: girder
-  vars:
-    install_base_path: "/opt"
-
-    girder_version: master
-    girder_base_path: "{{ install_base_path }}/girder"
-    girder_venv: "{{ girder_base_path }}/.venv"
-    girder_path: "{{ girder_base_path }}/{{ girder_version }}"
-    girder_user: "girder"
-
-    cumulus_version: master
-    cumulus_celery_user: celery
-
   pre_tasks:
     - name: Create users
       user:
@@ -69,91 +57,102 @@
 #       tags:
 #         - config
 #
-# - name: Configure girder
-#   hosts: girder
-#   vars:
-#     girder_port: "{{ girder_port|default(8080) }}"
-#   tags:
-#     - config
-#   tasks:
-#     - name: Install girder client
-#       pip:
-#         name: girder-client
-#         version: 1.1.1
-#       become: yes
-#       become_user: root
-#
-#     - name: Create 'admin' User
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         user:
-#           firstName: "Admin"
-#           lastName: "User"
-#           login: "admin"
-#           password: "letmein"
-#           email: "admin.user@kitware.com"
-#           admin: yes
-#         state: present
-#
-#     - name: Create 'cumulus' User
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         username: "admin"
-#         password: "letmein"
-#         user:
-#           firstName: "Cumulus"
-#           lastName: "Cumulus"
-#           login: "cumulus"
-#           password: "letmein"
-#           email: "cumulus@kitware.com"
-#         state: present
-#
-#     - name: Create cumulus group with cumulus user
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         username: "admin"
-#         password: "letmein"
-#         group:
-#           name: "cumulus"
-#           description: "cumulus group"
-#           users:
-#             - login: cumulus
-#               type: admin
-#         state: present
-#
-#     - name: Create filesystem assetstore
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         username: "admin"
-#         password: "letmein"
-#         assetstore:
-#           name: "Filesystem Assetstore"
-#           type: "filesystem"
-#           root: "/data/girder"
-#           current: true
-#         state: present
-#
-#     - name: Ensure minerva, cumulus, romanesco and cumulus_frontend plugins are enabled
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         username: "admin"
-#         password: "letmein"
-#         plugins:
-#           - minerva
-#           - cumulus
-#           - cumulus_frontend
-#         state: present
-#
-#     - name: Restart the server
-#       girder:
-#         host: "{{ ansible_default_ipv4['address'] }}"
-#         port: "{{ girder_port }}"
-#         username: "admin"
-#         password: "letmein"
-#         put:
-#           path: "system/restart"
+- name: Configure girder
+  hosts: girder
+  vars:
+    girder_port: "{{ girder_port|default(8080) }}"
+  tags:
+    - config
+    - cumulus
+  tasks:
+    - name: Install girder client
+      pip:
+        name: girder-client
+        version: 1.1.1
+        virtualenv: "{{ girder_venv }}"
+      when: girder_venv is defined
+
+    - name: Install girder client
+      pip:
+        name: girder-client
+        version: 1.1.1
+        virtualenv: "{{ girder_venv }}"
+      when: girder_venv is not defined
+      become: yes
+      become_user: root
+
+    - name: Create 'admin' User
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        user:
+          firstName: "Admin"
+          lastName: "User"
+          login: "admin"
+          password: "letmein"
+          email: "admin.user@kitware.com"
+          admin: yes
+        state: present
+
+    - name: Create 'cumulus' User
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        user:
+          firstName: "Cumulus"
+          lastName: "Cumulus"
+          login: "cumulus"
+          password: "letmein"
+          email: "cumulus@kitware.com"
+        state: present
+
+    - name: Create cumulus group with cumulus user
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        group:
+          name: "cumulus"
+          description: "cumulus group"
+          users:
+            - login: cumulus
+              type: admin
+        state: present
+
+    - name: Create filesystem assetstore
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        assetstore:
+          name: "Filesystem Assetstore"
+          type: "filesystem"
+          root: "{{ girder_base_path }}/data/{{ girder_version }}"
+          current: true
+        state: present
+
+    - name: Ensure minerva, cumulus, romanesco and cumulus_frontend plugins are enabled
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        plugins:
+
+          - cumulus
+#          - minerva
+#          - cumulus_frontend
+        state: present
+
+    - name: Restart the server
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        put:
+          path: "system/restart"

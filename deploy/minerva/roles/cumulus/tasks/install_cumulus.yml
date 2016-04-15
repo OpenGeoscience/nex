@@ -43,16 +43,10 @@
     chdir: "{{ cumulus_install_root }}"
     virtualenv: "{{ girder_venv | default(omit) }}"
 
-## - name: cumulus | set | egg | permissions
-##   file:
-##     path: "{{ cumulus_install_root }}"
-##     recurse: true
-##     state: directory
-##     owner: "{{ cumulus_celery_user }}"
-##     mode: g+w
-##   become: yes
-##   become_user: root
 
-- name: cumulus | install | girder | plugin
-  include: cumulus_girder_plugin.yml
+- name: Install cumulus girder plugins
+  file:
+    dest: "{{ girder_path }}/plugins/{{ item }}"
+    src: "{{cumulus_plugin_root}}/{{ item }}"
+    state: link
   with_items: "{{ girder_plugins }}"
