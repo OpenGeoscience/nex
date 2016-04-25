@@ -13,6 +13,9 @@ Vagrant.configure(2) do |config|
 
   host_port = ENV["GIRDER_HOST_PORT"] || 8080
   guest_port = ENV["GIRDER_GUEST_PORT"] || host_port
+  dev_install = ENV["DEVELOPMENT"] || false
+
+  config.vm.network "private_network", type: "dhcp"
 
   config.vm.network "forwarded_port", guest: guest_port, host: host_port
 
@@ -46,6 +49,26 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # If DEVELOPMENT is true,  mount NFS directories from host
+  if dev_install
+    if File.exists? File.expand_path("../../../minerva")
+      config.vm.synced_folder "../../../minerva", "/tmp/minerva-nfs", type: "nfs"
+      config.bindfs.bind_folder "/tmp/minerva-nfs", "/opt/minerva/master",
+                                after: :provision,
+                                o: "nonempty",
+                                u: "girder",
+                                g: "girder"
+    end
+    if File.exists? File.expand_path("../../../cumulus")
+      config.vm.synced_folder "../../../cumulus", "/tmp/cumulus-nfs", type: "nfs"
+      config.bindfs.bind_folder "/tmp/cumulus-nfs", "/opt/cumulus/master",
+                                after: :provision,
+                                o: "nonempty",
+                                u: "girder",
+                                g: "girder"
+    end
+  end
 
   config.vm.provision "ansible" do |ansible|
     ansible.groups = {
