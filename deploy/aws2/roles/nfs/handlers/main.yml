@@ -1,0 +1,6 @@
+- name: restart NFS
+  service:
+    name: nfs-kernel-server
+    state: restarted
+  become: yes
+  become_user: root

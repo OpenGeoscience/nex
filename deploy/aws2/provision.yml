@@ -1,0 +1,52 @@
+- name: Provision the master node
+  hosts: master
+  roles:
+    - { role: generate_users, tags: [ "users", "provision", "provision_users"] }
+    - { role: nfs, tags: ["nfs", "provision", "provision_nfs"] }
+    - { role: hdfs, tags: ["hdfs", "provision", "provision_hdfs"] }
+    - { role: spark, tags: ["spark", "provision", "provision_spark"] }
+
+
+- name: Provision the regular nodes
+  hosts: nodes
+  roles:
+    - { role: generate_users, tags: ["users", "provision", "provision_users"] }
+    - { role: nfs, tags: ["nfs", "provision", "provision_nfs"] }
+    - { role: hdfs, tags: ["hdfs", "provision", "provision_hdfs"] }
+    - { role: spark, tags: ["spark", "provision", "provision_spark"] }
+
+
+- name: Start services and daemons on master node
+  hosts: master
+  tasks:
+    - name: Start/Restart NFS service
+      service:
+        name: nfs-kernel-server
+        state: restarted
+      become: yes
+      become_user: root
+      tags: ["nfs", "restart", "restart_nfs"]
+
+    - name: Start/Restart YARN resourcemanager and nodemanagers
+      shell: >-
+        {{ hadoop_home }}/sbin/stop-yarn.sh &&
+        {{ hadoop_home }}/sbin/start-yarn.sh
+
+      tags: ["yarn", "restart", "restart_yarn"]
+
+
+    - name: Start/Restart HDFS namenode and datanode daemons
+      shell: >-
+        {{ hadoop_home }}/sbin/stop-dfs.sh &&
+        {{ hadoop_home }}/sbin/start-dfs.sh
+
+      tags: ["hdfs", "restart", "restart_hdfs"]
+
+
+
+    - name: Start/Restart spark master and slaves
+      shell: >-
+        {{ spark_home }}/sbin/stop-all.sh &&
+        {{ spark_home }}/sbin/start-all.sh
+
+      tags: ["spark", "restart", "restart_spark"]

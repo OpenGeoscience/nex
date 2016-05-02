@@ -1,0 +1,13 @@
+<configuration>
+<property>
+   <name>mapreduce.framework.name</name>
+   <value>yarn</value>
+ </property>
+
+<property>
+  <!-- Add to the classpath used when running an M/R job -->
+  <name>mapreduce.application.classpath</name>
+  <value>$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*,$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/lib/*,$HADOOP_MAPRED_HOME/share/hadoop/tools/lib/*</value>
+</property>
+
+</configuration>

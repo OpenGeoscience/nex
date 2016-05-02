@@ -1,0 +1,6 @@
+---
+
+spark_home: /opt/spark/1.6.1
+spark_version: 1.6.1
+jupyter_port: 8888
+jupyter_ip: "*"

@@ -54,10 +54,12 @@
     # NOTE:  before merging into master branch has to be changed
     - name: Clone NEX repo
       git:
-        repo: git@github.com:OpenGeoscience/nex.git
+        repo: https://github.com/OpenGeoscience/nex.git
         dest: /public/nex
         version: master
         ssh_opts: "-o StrictHostKeyChecking=no"
+        recursive: no
+        force: yes
 
     - name: Create .master file with IP for celery app
       shell: >-
