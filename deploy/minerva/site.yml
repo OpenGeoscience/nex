@@ -11,6 +11,8 @@
 
 - name: Deploy girder
   hosts: girder
+  vars:
+    girder_venv: "{{ girder_base_path }}/.venv"
   pre_tasks:
     - name: Create users
       user:
@@ -51,8 +53,6 @@
       service_log_file: "{{ girder_path }}/logs/girder.log"
       become: yes
       become_user: root
-      tags:
-        - foo
 
 - name: Configure girder
   hosts: girder
@@ -76,8 +76,6 @@
         host: "{{ ansible_default_ipv4['address'] }}"
         port: "{{ girder_port }}"
         delay: 5
-      tags:
-        - foo
 
     - name: Create 'admin' User
       girder:
@@ -164,9 +162,12 @@
       tags:
         - config
 
-
 - hosts: rabbitmq
   roles:
+    - role: cumulus
+      tags:
+        - cumulus
+
     - role: celery
       celery_user: "{{ cumulus_celery_user }}"
       celery_group: "{{ cumulus_celery_user }}"

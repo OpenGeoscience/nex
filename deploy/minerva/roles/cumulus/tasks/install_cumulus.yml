@@ -24,7 +24,7 @@
   template:
     src: config.json.j2
     dest: "{{cumulus_install_root}}/cumulus/conf/config.json"
-    mode: 0660
+    mode: 0665
     owner: "{{ role_user_output.stdout }}"
     group: "{{ cumulus_celery_user }}"
   become: yes
@@ -50,3 +50,4 @@
     src: "{{cumulus_plugin_root}}/{{ item }}"
     state: link
   with_items: "{{ cumulus_girder_plugins }}"
+  when: girder_path is defined

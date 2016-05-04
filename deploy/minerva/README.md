@@ -6,6 +6,16 @@ cd nex/deploy/minerva
 vagrant up
 ```
 
+### Note
+You may use ```GIRDER_VERSION```, ```CUMULUS_VERSION```, and ```MINERVA_VERSION```
+environment variables to specify a git-ish version of each of the packages
+will be installed.  e.g.
+
+```sh
+MINERVA_VERSION=cumulus_frontend_update vagrant up
+```
+
+where ```cumulus_frontend_update``` is the name of a branch you wish to test.
 
 ## Development install
 It is possible to develop on cumulus/minerva locally and mount those
