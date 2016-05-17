@@ -51,7 +51,7 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   # If DEVELOPMENT is true,  mount NFS directories from host
-  if dev_install
+  if dev_install and Vagrant.has_plugin?("vagrant-bindfs")
     if File.exists? File.expand_path("../../../minerva")
       config.vm.synced_folder "../../../minerva", "/tmp/minerva-nfs", type: "nfs"
       config.bindfs.bind_folder "/tmp/minerva-nfs", "/opt/minerva/master",

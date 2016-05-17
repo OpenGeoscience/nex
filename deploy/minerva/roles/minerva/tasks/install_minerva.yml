@@ -27,7 +27,6 @@
       repo: "{{ minerva_repo }}"
       dest: "{{ minerva_install_root }}"
       version: "{{ minerva_version }}"
-      force: yes
       update: yes
 
   - name: Update pip
@@ -39,6 +38,13 @@
   - name: Install python dependencies
     pip:
       requirements: "{{minerva_install_root}}/requirements.txt"
+      virtualenv: "{{ girder_venv | default(omit) }}"
+
+  - name: Install minerva as a package
+    pip:
+      name: .
+      editable: yes
+      chdir: "{{ minerva_install_root }}"
       virtualenv: "{{ girder_venv | default(omit) }}"
 
   # We should be able to remove this task once romanesco
