@@ -75,3 +75,8 @@ export SPARK_HOME={{ spark_home }}
 
 export HADOOP_CONF_DIR={{ hadoop_config }}
 export SPARK_DIST_CLASSPATH="$( "$HADOOP_HOME/bin/hadoop" classpath )"
+
+export SPARK_WORKER_CORES={{ spark_worker_cores }}
+export SPARK_WORKER_MEMORY={{ spark_worker_memory }}
+
+export SPARK_EXECUTOR_MEMORY={{ spark_executor_memory }}

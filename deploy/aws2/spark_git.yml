@@ -3,7 +3,7 @@
   roles:
     - role: spark-git
       # Tip of master 2016-04-05 09:50:51 EST
-      spark_git_version: "78071736799b6c86b5c01b27395f4ab87075342b"
+      spark_git_version: "branch-2.0"
       tags: ["spark", "provision", "provision_spark"]
 
 - name: Provision the regular nodes
@@ -11,5 +11,5 @@
   roles:
     - role: spark-git
       # Tip of master 2016-04-05 09:50:51 EST
-      spark_git_version: "78071736799b6c86b5c01b27395f4ab87075342b"
+      spark_git_version: "branch-2.0"
       tags: ["spark", "provision", "provision_spark"]
