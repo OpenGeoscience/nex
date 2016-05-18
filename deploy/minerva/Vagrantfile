@@ -81,7 +81,7 @@ Vagrant.configure(2) do |config|
 
     ansible.extra_vars = {
       default_user: "vagrant",
-      girder_port: host_port
+      girder_port: guest_port
     }
     ENV["GIRDER_VERSION"] && ansible.extra_vars['girder_version'] = ENV["GIRDER_VERSION"]
     ENV["CUMULUS_VERSION"] && ansible.extra_vars['cumulus_version'] = ENV["CUMULUS_VERSION"]
