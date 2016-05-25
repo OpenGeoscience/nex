@@ -1,0 +1,5 @@
+- src: nsg.graphite
+  name: graphite
+
+- src: geerlingguy.nginx
+  name: nginx

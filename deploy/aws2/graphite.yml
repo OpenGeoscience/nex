@@ -1,0 +1,23 @@
+- hosts: master
+  become: yes
+  become_user: root
+  handlers:
+  roles:
+    - role: nginx
+      tags: ['nginx']
+
+    - role: graphite
+      tags: ['graphite']
+      graphite_user: graphite
+      graphite_secret_key: trustnoone
+      graphite_admin_email: chris.kotfila@kitware.com
+
+  post_tasks:
+    - name: Install vhosts.
+      template:
+        src: vhosts.conf
+        dest: /etc/nginx/sites-enabled/vhosts.conf
+      tags: ['nginx']
+      become: yes
+      become_user: root
+      notify: restart nginx
