@@ -1,0 +1,12 @@
+# Enable Graphite
+*.sink.graphite.class=org.apache.spark.metrics.sink.GraphiteSink
+*.sink.graphite.host={{ hostvars[groups[master_group_name][0]]['ansible_fqdn'] }}
+*.sink.graphite.port=2003
+*.sink.graphite.period=5
+*.sink.graphite.prefix={{ ansible_hostname }}
+
+# Enable jvm source for instance master, worker, driver and executor
+master.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+worker.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+driver.source.jvm.class=org.apache.spark.metrics.source.JvmSource
+executor.source.jvm.class=org.apache.spark.metrics.source.JvmSourc

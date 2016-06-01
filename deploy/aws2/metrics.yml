@@ -12,12 +12,25 @@
       graphite_secret_key: trustnoone
       graphite_admin_email: chris.kotfila@kitware.com
 
+    - role: grafana
+      tags: ['graphana']
+
   post_tasks:
     - name: Install vhosts.
       template:
         src: vhosts.conf
         dest: /etc/nginx/sites-enabled/vhosts.conf
-      tags: ['nginx']
+      tags: ['restart', 'restart_nginx', 'nginx']
       become: yes
       become_user: root
       notify: restart nginx
+
+    - service:
+        name: carbon-cache
+        state: restarted
+      tags: ['restart', 'restart_graphite']
+
+    - service:
+        name: grafana-server
+        state: restarted
+      tags: ['restart', 'restart_grafana']

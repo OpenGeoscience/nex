@@ -3,3 +3,6 @@
 
 - src: geerlingguy.nginx
   name: nginx
+
+- src: Stouts.grafana
+  name: grafana

@@ -96,5 +96,8 @@
       dest: "{{ spark_config }}/slaves"
     - src: spark-defaults.conf.j2
       dest: "{{ spark_config }}/spark-defaults.conf"
+    - src: metrics.properties.j2
+      dest: "{{ spark_config }}/metrics.properties"
+
   tags:
     - update_spark_configs
