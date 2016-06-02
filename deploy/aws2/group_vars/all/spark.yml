@@ -13,6 +13,6 @@ spark_version: 1.6.1
 spark_home: "{{ spark_base_dir }}/spark/{{ spark_version }}"
 spark_config: "{{ spark_home }}/conf"
 
-spark_worker_cores: "1"
-spark_worker_memory: "1g"
-spark_executor_memory: "1g"
+spark_worker_cores: "3"
+spark_worker_memory: "10g"
+spark_executor_memory: "10g"

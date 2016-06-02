@@ -13,3 +13,13 @@
       # Tip of master 2016-04-05 09:50:51 EST
       spark_git_version: "branch-2.0"
       tags: ["spark", "provision", "provision_spark"]
+
+- name: Start services and daemons on master node
+  hosts: master
+  tasks:
+    - name: Start/Restart spark master and slaves
+      shell: >-
+        {{ spark_home }}/sbin/stop-all.sh &&
+        {{ spark_home }}/sbin/start-all.sh
+
+      tags: ["spark", "restart", "restart_spark"]

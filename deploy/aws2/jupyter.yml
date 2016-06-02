@@ -3,8 +3,8 @@
   roles:
     - name: Provision pyspark kernel with spark from master
       role: pyspark_jupyter_notebook
-      spark_home: "/opt/spark/78071736799b6c86b5c01b27395f4ab87075342b"
-      spark_version: "780717"
+      spark_home: "/opt/spark/branch-2.0"
+      spark_version: "branch-2.0"
       tags: ["notebook", "provision", "provision_notebook"]
 
     - name: Provision pyspark kernel with spark from 1.6.1
