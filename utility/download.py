@@ -13,6 +13,9 @@ class Downloader(object):
         self.month = month
         self.day = day
 
+        self.directory = self._create_data_directory()
+        self.bucket = self._connect_to_bucket()
+
 
     def _create_data_directory(self):
         """ Create a directory to dump the data """
@@ -25,19 +28,32 @@ class Downloader(object):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        self.directory = directory
+        return directory
 
+    def _connect_to_bucket(self):
+        # Get the s3
+        resource = boto3.resource('s3')
+        client = resource.meta.client
+        transfer = S3Transfer(client)
+
+
+        # Connect anonymously
+        resource.meta.client.meta.events.register('choose-signer.s3.*',
+                                                  disable_signing)
+
+        # Get the nasanex bucket
+        nasanex = resource.Bucket('nasanex')
+
+        return nasanex
 
     def download_aqua_data(self):
-        self._create_data_directory()
-
+        pass
 
     def download_terra_data(self):
-        self._create_data_directory()
+        pass
 
     def download_weather_data(self):
-        self._create_data_directory()
-
+        pass
 
 
 if __name__ == '__main__':
