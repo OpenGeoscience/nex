@@ -7,7 +7,6 @@ from boto3.s3.transfer import S3Transfer
 
 class Downloader(object):
 
-
     def __init__(self, year, month, day):
         self.year = year
         self.month = month
@@ -16,13 +15,12 @@ class Downloader(object):
         self.directory = self._create_data_directory()
         self.nasanex = self._connect_to_bucket()
 
-
     def _create_data_directory(self):
         """ Create a directory to dump the data """
 
         # Directory of the script
         directory = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             'Data_Directory')
+                                 'Data_Directory')
 
         # Create a new directory
         if not os.path.exists(directory):
@@ -45,25 +43,25 @@ class Downloader(object):
 
         return {'bucket': nasanex, 'transfer': transfer}
 
-
     def _filter_and_download_data(self, prefix):
 
         for item in self.nasanex['bucket'].objects.filter(Prefix=prefix):
-            output_dir = os.path.join(self.directory, os.path.basename(item.key))
-            self.nasanex['transfer'].download_file('nasanex', item.key, output_dir)
-
+            output_dir = os.path.join(self.directory,
+                                      os.path.basename(item.key))
+            self.nasanex['transfer'].download_file('nasanex',
+                                                   item.key, output_dir)
 
     def download_aqua_data(self):
 
         prefix = '{}/{}.{}.{}'.format('MODIS/MOLA/MYD13Q1.005',
-            self.year, self.month, self.day)
+                                      self.year, self.month, self.day)
 
         self._filter_and_download_data(prefix)
 
     def download_terra_data(self):
 
         prefix = '{}/{}.{}.{}'.format('MODIS/MOLT/MOD13Q1.005',
-            self.year, self.month, self.day)
+                                      self.year, self.month, self.day)
 
         self._filter_and_download_data(prefix)
 
