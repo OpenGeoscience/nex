@@ -11,3 +11,4 @@ deploy/keys
 .vagrant/
 /experimental/aws_etl/gddp_etl/.master
 *.parquet
+/utility/Data_Directory
