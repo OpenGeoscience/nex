@@ -16,7 +16,7 @@ class Downloader(object):
         self.nasanex = self._connect_to_bucket()
 
     def _create_data_directory(self):
-        """ Create a directory to dump the data """
+        """ Creates a directory to dump the data """
 
         # Directory of the script
         directory = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -29,6 +29,8 @@ class Downloader(object):
         return directory
 
     def _connect_to_bucket(self):
+        """ Connects to nasanex bucket """
+
         # Get the s3
         resource = boto3.resource('s3')
         client = resource.meta.client
@@ -44,6 +46,10 @@ class Downloader(object):
         return {'bucket': nasanex, 'transfer': transfer}
 
     def _filter_and_download_data(self, prefix):
+        """ Filters and downloads data from nasanex bucket
+
+        :param prefix: Prefix that is used for filtering datasets
+         """
 
         for item in self.nasanex['bucket'].objects.filter(Prefix=prefix):
             output_dir = os.path.join(self.directory,
@@ -52,6 +58,7 @@ class Downloader(object):
                                                    item.key, output_dir)
 
     def download_aqua_data(self):
+        """ Downloads aqua dataset for the given date """
 
         prefix = '{}/{}.{}.{}'.format('MODIS/MOLA/MYD13Q1.005',
                                       self.year, self.month, self.day)
@@ -59,6 +66,7 @@ class Downloader(object):
         self._filter_and_download_data(prefix)
 
     def download_terra_data(self):
+        """ Downloads terra dataset for the given date """
 
         prefix = '{}/{}.{}.{}'.format('MODIS/MOLT/MOD13Q1.005',
                                       self.year, self.month, self.day)
@@ -66,6 +74,7 @@ class Downloader(object):
         self._filter_and_download_data(prefix)
 
     def download_tmax_data(self):
+        """ Downloads maximum temperature dataset for the given year """
 
         prefix = 'NEX-GDDP/BCSD/rcp45/day/atmos/tasmax/r1i1p1/v1.0/\
 tasmax_day_BCSD_rcp45_r1i1p1_CCSM4_{}.nc'.format(self.year)
