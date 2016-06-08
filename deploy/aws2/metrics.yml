@@ -15,6 +15,10 @@
     - role: grafana
       tags: ['graphana']
 
+    - role: collectd
+      tags: ['collectd']
+
+
   post_tasks:
     - name: Install vhosts.
       template:
@@ -25,12 +29,33 @@
       become_user: root
       notify: restart nginx
 
-    - service:
-        name: carbon-cache
-        state: restarted
+    - shell: >-
+        service carbon-cache stop;
+        service carbon-cache start
+      become: yes
+      become_user: root
       tags: ['restart', 'restart_graphite']
 
     - service:
         name: grafana-server
         state: restarted
       tags: ['restart', 'restart_grafana']
+
+    - service:
+        name: collectd
+        state: restarted
+      tags: ['restart', 'restart_collectd']
+
+
+- hosts: nodes
+  become: yes
+  become_user: root
+  roles:
+    - role: collectd
+      tags: ['collectd']
+
+  post_tasks:
+    - service:
+        name: collectd
+        state: restarted
+      tags: ['restart', 'restart_collectd', 'update_collected_configs']

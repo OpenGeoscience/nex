@@ -68,10 +68,10 @@ Vagrant.configure(2) do |config|
           mount = params['mount']
           if mount.kind_of?(Array)
             mount.each do |mnt|
-              config.vm.synced_folder mnt['src'], mnt['dest'], create: true
+              config.vm.synced_folder mnt['src'], mnt['dest'], create: true, type: "nfs"
             end
           else
-            config.vm.synced_folder mount['src'], mount['dest'], create: true
+            config.vm.synced_folder mount['src'], mount['dest'], create: true, type: "nfs"
           end
         end
       end

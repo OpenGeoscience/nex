@@ -22,4 +22,4 @@
         {{ spark_home }}/sbin/stop-all.sh &&
         {{ spark_home }}/sbin/start-all.sh
 
-      tags: ["spark", "restart", "restart_spark"]
+      tags: ["spark", "restart", "restart_spark", "update_spark_configs"]
