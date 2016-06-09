@@ -12,7 +12,7 @@
 
 - name: Template out configuration
   template:
-    src: collectd.conf.j2n
+    src: collectd.conf.j2
     dest: /etc/collectd/collectd.conf
   become: yes
   become_user: root

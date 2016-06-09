@@ -3,21 +3,8 @@
   become_user: root
   handlers:
   roles:
-    - role: nginx
+ss     - role: nginx
       tags: ['nginx']
-
-    - role: graphite
-      tags: ['graphite']
-      graphite_user: graphite
-      graphite_secret_key: trustnoone
-      graphite_admin_email: chris.kotfila@kitware.com
-
-    - role: grafana
-      tags: ['graphana']
-
-    - role: collectd
-      tags: ['collectd']
-
 
   post_tasks:
     - name: Install vhosts.
@@ -28,6 +15,26 @@
       become: yes
       become_user: root
       notify: restart nginx
+
+
+- hosts: master
+  become: yes
+  become_user: root
+  handlers:
+  roles:
+    - role: graphite
+      tags: ['graphite']
+      graphite_user: ubuntu
+      graphite_secret_key: trustnoone
+      graphite_admin_email: chris.kotfila@kitware.com
+
+    - role: grafana
+      tags: ['graphana']
+
+    - role: collectd
+      tags: ['collectd']
+
+  post_tasks:
 
     - shell: >-
         service carbon-cache stop;

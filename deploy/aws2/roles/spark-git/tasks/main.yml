@@ -89,7 +89,7 @@
 
 - name: Build spark distribution
   shell: >-
-    build/mvn -Pyarn -Phadoop-2.6 -DskipTests clean package
+    build/mvn -Pyarn -Phadoop-2.7 -DskipTests clean package install
   args:
     chdir: "{{ spark_home }}"
     creates: "core/dependency-reduced-pom.xml"

@@ -15,7 +15,7 @@ object App {
 
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-    val parquet = sqlContext.read.parquet("hdfs://192.168.33.20/home/ubuntu/")
+    val parquet = sqlContext.read.parquet(args(0))
     parquet.registerTempTable("parquet")
 
     val sql = """
@@ -36,7 +36,7 @@ object App {
 
     val over = of.select(col("*"), sum(col("o_f")).over(spec) as "days_over")
 
-    over.select("*").where(col("days_over") >= 200).write.format("csv").save("/tmp/days_over_freezing/")
+    over.select("*").where(col("days_over") >= 200).write.format("csv").save(args(1))
 
   }
 
