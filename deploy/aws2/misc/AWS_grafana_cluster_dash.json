@@ -7,7 +7,7 @@
   "timezone": "browser",
   "editable": true,
   "hideControls": false,
-  "sharedCrosshair": false,
+  "sharedCrosshair": true,
   "rows": [
     {
       "collapse": false,
@@ -39,7 +39,7 @@
             "current": false,
             "max": false,
             "min": false,
-            "show": false,
+            "show": true,
             "total": false,
             "values": false
           },
@@ -64,7 +64,7 @@
           "timeShift": null,
           "title": "Active Tasks",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -100,7 +100,7 @@
             "current": false,
             "max": false,
             "min": false,
-            "show": false,
+            "show": true,
             "total": false,
             "values": false
           },
@@ -125,7 +125,7 @@
           "timeShift": null,
           "title": "Completed Tasks",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -161,7 +161,7 @@
             "current": false,
             "max": false,
             "min": false,
-            "show": false,
+            "show": true,
             "total": false,
             "values": false
           },
@@ -186,7 +186,7 @@
           "timeShift": null,
           "title": "Completed Tasks per minute",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -257,7 +257,7 @@
           "timeShift": null,
           "title": "HDFS Bytes Read",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -320,7 +320,7 @@
           "timeShift": null,
           "title": "HDFS Bytes Written",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -381,7 +381,7 @@
           "timeShift": null,
           "title": "System Memory",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -452,7 +452,7 @@
           "timeShift": null,
           "title": "Disk Reads",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -515,7 +515,7 @@
           "timeShift": null,
           "title": "Disk Writes",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -579,7 +579,7 @@
           "timeShift": null,
           "title": "Packets Trasmited (eth1)",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -649,7 +649,7 @@
           "timeShift": null,
           "title": "Disk Remaining",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -710,7 +710,7 @@
           "timeShift": null,
           "title": "Combined CPU (user)",
           "tooltip": {
-            "shared": true,
+            "shared": false,
             "value_type": "cumulative"
           },
           "type": "graph",
@@ -774,8 +774,8 @@
       {
         "allFormat": "glob",
         "current": {
-          "text": "app-20160609172124-0003",
-          "value": "app-20160609172124-0003"
+          "text": "app-20160610150109-0006",
+          "value": "app-20160610150109-0006"
         },
         "datasource": "Local",
         "includeAll": false,
@@ -796,6 +796,14 @@
           {
             "text": "app-20160609172124-0003",
             "value": "app-20160609172124-0003"
+          },
+          {
+            "text": "app-20160610121032-0004",
+            "value": "app-20160610121032-0004"
+          },
+          {
+            "text": "app-20160610144837-0005",
+            "value": "app-20160610144837-0005"
           },
           {
             "text": "application",
@@ -826,5 +834,5 @@
   },
   "refresh": "5s",
   "schemaVersion": 6,
-  "version": 4
+  "version": 6
 }
