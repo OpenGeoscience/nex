@@ -49,7 +49,7 @@ object App {
 
     // See: https://en.wikipedia.org/wiki/Winkler_scale
     // Months for northern/southern hemisphere
-    val grow_season = parquet.select($"*", avg_tmp_f($"tasmin", $"tasmax") as "f_tasavg").filter(
+    val grow_season = wine.select($"*", avg_tmp_f($"tasmin", $"tasmax") as "f_tasavg").filter(
       "(lat >= 0.0 AND month >= 4 AND month <= 10) OR (lat < 0.0 AND month <= 4 AND month >= 10)")
 
 
