@@ -3,7 +3,7 @@
   become_user: root
   handlers:
   roles:
-ss     - role: nginx
+    - role: nginx
       tags: ['nginx']
 
   post_tasks:
