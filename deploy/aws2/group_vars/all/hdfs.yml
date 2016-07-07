@@ -1,0 +1,18 @@
+# The directory to download the hadoop distro into
+# Should be an NFS directory so we don't have to do multiple
+# downloads from cluster-external sources
+hadoop_download_dir: /public
+
+# The base directory where hadoop will live
+hadoop_base_dir: /opt
+
+# The version of hadoop to download
+hadoop_version: 2.7.2
+
+# hadoop's home directory
+hadoop_home: "{{ hadoop_base_dir }}/hadoop/{{ hadoop_version }}"
+hadoop_config: "{{ hadoop_home }}/etc/hadoop"
+
+hadoop_dfs_root: "/data/dfs"
+hadoop_dfs_namenode_name_dir: "{{ hadoop_dfs_root }}/namenode"
+hadoop_dfs_datanode_data_dir: "{{ hadoop_dfs_root }}/datanode"

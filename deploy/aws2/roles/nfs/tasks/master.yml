@@ -1,0 +1,39 @@
+---
+- name: Install NFS server dependencies
+  apt:
+    name: nfs-kernel-server
+    update-cache: yes
+  become: yes
+  become_user: root
+
+# This queries the AWS instance metadata to get the cidr block for this VPC
+- name: Get AWS VPC CIDR
+  shell: >-
+    curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/ 2>/dev/null | head -n 1)vpc-ipv4-cidr-block
+  register: vpc_cidr_command
+  when: vpc_cidr is not defined
+
+- name: Set vpc_cidr
+  set_fact:
+    vpc_cidr: "{{ vpc_cidr_command.stdout }}"
+  when: vpc_cidr is not defined
+
+- name: Create local directories
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  with_items: "{{ nfs_share_directories }}"
+  become: yes
+  become_user: root
+
+- name: update /etc/exports
+  lineinfile:
+    dest: /etc/exports
+    line: "{{ item }} {{ vpc_cidr }}(rw,sync,no_subtree_check)"
+  with_items: "{{ nfs_share_directories }}"
+  become: yes
+  become_user: root
+  notify:
+    - restart NFS
