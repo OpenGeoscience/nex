@@ -2,31 +2,44 @@ domain: "cluster.dev"
 ansible:
   verbose: ""
   plays:
-    - playbook: "hosts-files.yml"
-    - playbook: "../aws2/provision.yml"
+    - playbook: "../gobig/playbooks/hadoop-hdfs/site.yml"
+    - playbook: "../gobig/playbooks/spark-standalone/site-custom-hdfs.yml"
+    - playbook: "local.yml"
 nodes:
   head:
-    memory: 4096
-    cpus: 2
-    ports:
-      hdfs_web_ui: "50070:50070"
-      spark_web_ui: "8080:8080"
-      spark_master: "7077:7077"
-      yarn_resource_manager_ui: "8088:8088"
-    roles:
-      - master
+    memory: 8192
+    cpus: 4
     mount:
-      - src: "../../"
-        dest: "/public/nex"
-
-  data-01:
-    memory: 4096
-    cpus: 2
+      - src: ../../
+        dest: /home/vagrant/NEX
+      - src: /data/NEX-GDDP-1997/
+        dest: /data/tmp
     roles:
-      - nodes
+      - head
+      - namenodes
+      - datanodes
+      - spark
+      - nex
+  data-01:
+    memory: 8192
+    cpus: 4
+    roles:
+      - spark
+      - datanodes
+      - spark-slaves
+      - nex
+    mount:
+      - src: /data/NEX-GDDP-1997/
+        dest: /data/tmp
 
   data-02:
-    memory: 4096
-    cpus: 2
+    memory: 8192
+    cpus: 4
     roles:
-      - nodes
+      - spark
+      - datanodes
+      - spark-slaves
+      - nex
+    mount:
+      - src: /data/NEX-GDDP-1997/
+        dest: /data/tmp

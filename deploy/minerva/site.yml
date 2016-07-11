@@ -1,0 +1,175 @@
+# - name: Deploy rabbitmq
+#   hosts: rabbitmq
+#   become: yes
+#   roles:
+#     - role: Stouts.rabbitmq
+#   tags:
+#     - cumulus
+
+
+#################33
+
+- name: Deploy girder
+  hosts: girder
+  vars:
+    girder_venv: "{{ girder_base_path }}/.venv"
+  pre_tasks:
+    - name: Create users
+      user:
+        name: "{{ item }}"
+      become: yes
+      become_user: root
+      with_items:
+        - "{{ girder_user }}"
+        - "{{ cumulus_celery_user }}"
+
+  roles:
+    - role: girder
+      become: yes
+      become_user: "{{ girder_user }}"
+
+    - role: cumulus
+      cumulus_girder_plugins:
+        - cumulus
+      become: Yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - cumulus
+
+    - role: minerva
+      minerva_girder_plugins:
+        - cumulus_frontend
+      become: yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - minerva
+
+    - role: upstart
+      service_name: "girder"
+      service_chdir: "{{ girder_path }}"
+      service_user: "{{ girder_user }}"
+      service_exec: "python -m girder"
+      service_venv: "{{ girder_venv }}"
+      service_log_file: "{{ girder_path }}/logs/girder.log"
+      become: yes
+      become_user: root
+
+- name: Configure girder
+  hosts: girder
+  vars:
+    girder_port: "{{ girder_port|default(8080) }}"
+  tags:
+    - config
+    - cumulus
+  tasks:
+    # This has to be installed system wide so girder module
+    # (which won't be running in the virtualenv) has access
+    - name: Install girder client
+      pip:
+        name: girder-client
+        version: 1.1.1
+      become: yes
+      become_user: root
+
+    - name: Wait for girder to be up and running
+      wait_for:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        delay: 5
+
+    - name: Create 'admin' User
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        user:
+          firstName: "Admin"
+          lastName: "User"
+          login: "admin"
+          password: "letmein"
+          email: "admin.user@kitware.com"
+          admin: yes
+        state: present
+
+    - name: Create 'cumulus' User
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        user:
+          firstName: "Cumulus"
+          lastName: "Cumulus"
+          login: "cumulus"
+          password: "letmein"
+          email: "cumulus@kitware.com"
+        state: present
+
+    - name: Create cumulus group with cumulus user
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        group:
+          name: "cumulus"
+          description: "cumulus group"
+          users:
+            - login: cumulus
+              type: admin
+        state: present
+
+    - name: Create filesystem assetstore
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        assetstore:
+          name: "Filesystem Assetstore"
+          type: "filesystem"
+          root: "{{ girder_base_path }}/data/{{ girder_version }}"
+          current: true
+        state: present
+
+    - name: Ensure minerva, cumulus, romanesco and cumulus_frontend plugins are enabled
+      girder:
+        host: "{{ ansible_default_ipv4['address'] }}"
+        port: "{{ girder_port }}"
+        username: "admin"
+        password: "letmein"
+        plugins:
+          - cumulus
+          - minerva
+          - cumulus_frontend
+        state: present
+
+
+    - name: Restart the server
+      service:
+        name: girder
+        state: restarted
+      become: yes
+      become_user: root
+
+
+    - name: Build/Rebuild frontend assets
+      shell: >
+        npm install --production
+      args:
+        chdir: "{{ girder_path }}"
+      become: yes
+      become_user: "{{ girder_user }}"
+      tags:
+        - config
+
+- hosts: rabbitmq
+  roles:
+    - role: cumulus
+      tags:
+        - cumulus
+
+    - role: celery
+      celery_user: "{{ cumulus_celery_user }}"
+      celery_group: "{{ cumulus_celery_user }}"
+      celery_app: "cumulus"
+      celery_app_dir: "{{ cumulus_install_root }}"
