@@ -21,5 +21,6 @@ sbt assembly
 
 4) Run the main.py script
 ```sh
+cd ../
 python main.py
 ```
