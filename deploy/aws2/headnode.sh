@@ -12,4 +12,4 @@ IP_ADDR=$(aws ec2 \
               --query "Reservations[0].Instances[0].PublicIpAddress" \
               --output text)
 
-ssh -i ../keys/aws-NEX.pem ubuntu@$IP_ADDR $*
+ssh -i ../keys/aws-NEX.pem $* ubuntu@$IP_ADDR

@@ -1,6 +1,6 @@
 # Enable Graphite
 *.sink.graphite.class=org.apache.spark.metrics.sink.GraphiteSink
-*.sink.graphite.host={{ hostvars[groups[master_group_name][0]]['ansible_fqdn'] }}
+*.sink.graphite.host={{ graphite_host }}
 *.sink.graphite.port=2003
 *.sink.graphite.period=5
 *.sink.graphite.prefix=spark.{{ ansible_hostname }}

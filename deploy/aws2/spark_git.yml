@@ -2,16 +2,14 @@
   hosts: master
   roles:
     - role: spark-git
-      # Tip of master 2016-04-05 09:50:51 EST
-      spark_git_version: "branch-2.0"
+      spark_git_version: "2.0.0-preview"
       tags: ["spark", "provision", "provision_spark"]
 
 - name: Provision the regular nodes
   hosts: nodes
   roles:
     - role: spark-git
-      # Tip of master 2016-04-05 09:50:51 EST
-      spark_git_version: "branch-2.0"
+      spark_git_version: "2.0.0-preview"
       tags: ["spark", "provision", "provision_spark"]
 
 - name: Start services and daemons on master node
