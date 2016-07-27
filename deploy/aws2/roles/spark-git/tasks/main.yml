@@ -108,6 +108,7 @@
     - src: spark-defaults.conf.j2
       dest: "{{ spark_config }}/spark-defaults.conf"
   tags:
+    - update_configs
     - update_spark_configs
 
 - name: Copy metrics
@@ -115,3 +116,6 @@
     src: metrics.properties.j2
     dest: "{{ spark_config }}/metrics.properties"
   when: graphite_host is defined
+  tags:
+    - update_configs
+    - update_spark_configs

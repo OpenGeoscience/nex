@@ -1,6 +1,43 @@
 - hosts: localhost
   connection: local
   tasks:
+    - block:
+        - name: Find latest Master AMI
+          ec2_ami_find:
+            state: available
+            sort: creationDate
+            sort_order: descending
+            ami_tags:
+              ec2_pod: "{{ prefix }}"
+              ec2_pod_instance_name: "master"
+            region: "{{ ec2_region }}"
+          register: master_amis
+
+        - name: Register to ec2_master_ami variable
+          set_fact:
+            ec2_master_ami: "{{ master_amis.results[0]['ami_id'] }}"
+
+      when: ec2_master_ami is not defined
+
+    - block:
+        - name: Find latest Node AMI
+          ec2_ami_find:
+            state: available
+            sort: creationDate
+            sort_order: descending
+            ami_tags:
+              ec2_pod: "{{ prefix }}"
+              ec2_pod_instance_name: "node"
+            region: "{{ ec2_region }}"
+          register: node_amis
+
+        - name: Register to ec2_node_ami variable
+          set_fact:
+            ec2_node_ami: "{{ node_amis.results[0]['ami_id'] }}"
+
+      when: ec2_node_ami is not defined
+
+
     - name: Launch master instance
       ec2:
         # Required variables

@@ -4,7 +4,7 @@
     master_hostname: "{{ groups[master_group_name][0] }}"
     master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
   tags:
-    - update_spark_configs
+    - always
 
 # These are technically required,  but will have been run by the HDFS role
 # If for some reason you want to use this spark role without the hdfs role
@@ -97,6 +97,7 @@
     - src: spark-defaults.conf.j2
       dest: "{{ spark_config }}/spark-defaults.conf"
   tags:
+    - update_configs
     - update_spark_configs
 
 - name: Copy metrics
@@ -104,3 +105,6 @@
     src: metrics.properties.j2
     dest: "{{ spark_config }}/metrics.properties"
   when: graphite_host is defined
+  tags:
+    - update_configs
+    - update_spark_configs

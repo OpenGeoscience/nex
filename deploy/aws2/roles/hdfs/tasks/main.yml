@@ -4,7 +4,7 @@
     master_hostname: "{{ groups[master_group_name][0] }}"
     master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
   tags:
-    - update_hdfs_configs
+    - always
 
 - name: Add Oracle repository
   apt_repository:
@@ -101,10 +101,30 @@
       dest: "{{ hadoop_config }}/mapred-site.xml"
     - src: "slaves.j2"
       dest: "{{ hadoop_config }}/slaves"
+  tags:
+    - update_configs
+    - update_hdfs_configs
+
+- name: Copy metrics file
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
     - src: "hadoop-metrics2.properties.j2"
       dest: "{{ hadoop_config }}/hadoop-metrics2.properties"
+  when: graphite_host is defined
   tags:
+    - update_configs
     - update_hdfs_configs
+
+- name: Ensure Data directory does not exist
+  file:
+    path: "{{ hadoop_dfs_root }}"
+    state: absent
+  become: yes
+  become_user: root
+  tags:
+    - format_hdfs
 
 - name: Create Data directory
   file:
@@ -115,8 +135,8 @@
     state: directory
   become: yes
   become_user: root
-
-
+  tags:
+    - format_hdfs
 
 - name: Run master tasks
   include: master.yml

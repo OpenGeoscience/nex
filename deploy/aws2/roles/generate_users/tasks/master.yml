@@ -16,7 +16,13 @@
   become: yes
   become_user: root
 
-
 - name: Set public key fact on master host
   set_fact:
     user_public_keys: "{{ user_public_keys|default({})|combine({ item: user_module_output.ssh_public_key }) }}"
+
+- name: "Remove known_hosts"
+  file:
+    path: ~/.ssh/known_hosts
+    state: absent
+  tags:
+    - update_configs

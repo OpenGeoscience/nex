@@ -2,3 +2,5 @@
 - name: Format the namenode
   shell: >-
     {{ hadoop_home }}/bin/hdfs namenode -format -force
+  tags:
+    - format_hdfs

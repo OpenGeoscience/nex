@@ -23,7 +23,6 @@ ec2_region: us-west-2
 # Master variables
 #
 
-ec2_master_ami: ami-e0f7e081
 ec2_master_instance_type: t2.micro
 
 # Add volumes by specifying ec2_master_volumes
@@ -43,7 +42,6 @@ ec2_master_instance_type: t2.micro
 #########################
 # Node variables
 #
-ec2_node_ami: ami-e0f7e081
 ec2_node_instance_type: t2.micro
 ec2_node_count: 1
 

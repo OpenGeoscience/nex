@@ -1,0 +1,48 @@
+- hosts: all
+  tasks:
+    - name: gather facts
+      action: ec2_facts
+
+- hosts: localhost
+  vars:
+    postfix: "{{lookup('pipe', 'date +%Y%m%dT%H%M') }}"
+    master_id: "{{hostvars[groups['master'][0]]['ansible_ec2_instance_id']}}"
+    node_id: "{{hostvars[groups['nodes'][0]]['ansible_ec2_instance_id']}}"
+  tasks:
+
+    - name: Stop Master and Node instances
+      ec2:
+        instance_ids:
+          - "{{ master_id }}"
+          - "{{ node_id }}"
+        region: "{{ ec2_region }}"
+        wait: yes
+        wait_timeout: 600
+        state: stopped
+
+    - name: Generate AMIs
+      ec2_ami:
+        instance_id: "{{ item.id }}"
+        wait: yes
+        wait_timeout: 3600
+        name: "spark_{{ item.type }}_{{ postfix }}"
+        region: "{{ ec2_region }}"
+        tags:
+          Name: "spark_{{ item.type }}"
+          ec2_pod: "{{ prefix }}"
+          ec2_pod_instance_name: "{{ item.type }}"
+      with_items:
+        - id: "{{ master_id }}"
+          type: "master"
+        - id: "{{ node_id }}"
+          type: "node"
+
+#     - name: Terminate Master and Node instances
+#       ec2:
+#         instance_ids:
+#           - "{{ master_id }}"
+#           - "{{ node_id }}"
+#         region: "{{ ec2_region }}"
+#         wait: yes
+#         wait_timeout: 600
+#         state: terminated

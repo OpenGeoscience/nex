@@ -25,14 +25,14 @@
         state: restarted
       become: yes
       become_user: root
-      tags: ["nfs", "restart", "restart_nfs"]
+      tags: ["nfs", "restart", "restart_nfs", "update_nfs_configs", "update_configs"]
 
     - name: Start/Restart YARN resourcemanager and nodemanagers
       shell: >-
         {{ hadoop_home }}/sbin/stop-yarn.sh &&
         {{ hadoop_home }}/sbin/start-yarn.sh
 
-      tags: ["yarn", "restart", "restart_yarn"]
+      tags: ["yarn", "restart", "restart_yarn", "update_hdfs_configs", "update_configs"]
 
 
     - name: Start/Restart HDFS namenode and datanode daemons
@@ -40,7 +40,7 @@
         {{ hadoop_home }}/sbin/stop-dfs.sh &&
         {{ hadoop_home }}/sbin/start-dfs.sh
 
-      tags: ["hdfs", "restart", "restart_hdfs"]
+      tags: ["hdfs", "restart", "restart_hdfs", "update_hdfs_configs", "update_configs"]
 
 
 
@@ -49,4 +49,4 @@
         {{ spark_home }}/sbin/stop-all.sh &&
         {{ spark_home }}/sbin/start-all.sh
 
-      tags: ["spark", "restart", "restart_spark", "update_spark_configs"]
+      tags: ["spark", "restart", "restart_spark", "update_spark_configs", "update_configs"]
