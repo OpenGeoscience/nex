@@ -31,18 +31,20 @@
           Name: "spark_{{ item.type }}"
           ec2_pod: "{{ prefix }}"
           ec2_pod_instance_name: "{{ item.type }}"
+      register: ec2_amis
+      async: 7200
+      poll: 0
       with_items:
         - id: "{{ master_id }}"
           type: "master"
         - id: "{{ node_id }}"
           type: "node"
 
-#     - name: Terminate Master and Node instances
-#       ec2:
-#         instance_ids:
-#           - "{{ master_id }}"
-#           - "{{ node_id }}"
-#         region: "{{ ec2_region }}"
-#         wait: yes
-#         wait_timeout: 600
-#         state: terminated
+
+    - name: Wait for AMIs to finish generating
+      async_status: jid="{{ item.ansible_job_id }}"
+      register: ec2_jobs
+      until: {{ ec2_jobs.finished }}
+      retries: 300
+      delay: 24
+      with_items: {{ ec2_amis.results }}

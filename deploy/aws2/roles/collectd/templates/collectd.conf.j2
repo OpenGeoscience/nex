@@ -1056,7 +1056,7 @@ LoadPlugin write_graphite
 
 <Plugin write_graphite>
         <Node "head">
-                Host "{{ hostvars[groups[master_group_name][0]]['ansible_fqdn'] }}"
+                Host "{{ hostvars[groups['metrics'][0]]['ansible_fqdn'] }}"
                 Port "2003"
                 Protocol "tcp"
 #               LogSendErrors true

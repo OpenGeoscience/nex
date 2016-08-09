@@ -1,4 +1,59 @@
-- hosts: master
+- hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: python2
+    ubuntu_ami_owner: 099720109477
+  tasks:
+    - block:
+        - name: Find latest version of ubuntu 14.04 server
+          ec2_ami_find:
+            name: "ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server-*"
+            owner: "{{ ubuntu_ami_owner }}"
+            region: "{{ ec2_region }}"
+            sort: creationDate
+            sort_order: descending
+            sort_end: 1
+          register: ami_find
+
+        - name: Launch metric server instance
+          ec2:
+            instance_type: "t2.medium"
+            image: "{{ ami_find.results[0].ami_id }}"
+            region: "{{ ec2_region }}"
+            key_name: "{{ ec2_key_name }}"
+            instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
+            instance_tags:
+              Name: "{{ prefix }}_metrics"
+              ec2_pod: "{{ prefix }}"
+              ec2_pod_instance_name: metrics
+            count_tag:
+              Name: "{{ prefix }}_metrics"
+              ec2_pod: "{{ prefix }}"
+            exact_count: 1
+            volumes:
+              - device_name: /dev/sda1
+                volume_size: 1000
+            wait: true
+          register: metrics
+
+        - name: Wait for SSH to come up on nodes
+          wait_for:
+            host: "{{ item.public_dns_name }}"
+            port: 22
+            delay: 30
+            timeout: 320
+            state: started
+          with_items: "{{ metrics.instances + metrics.tagged_instances }}"
+
+        - name: Add instance to inventory
+          add_host:
+            hostname: "{{ item.public_ip }}"
+            groupname: 'metrics'
+          with_items: "{{ metrics.instances + metrics.tagged_instances }}"
+      when: "{{ 'metrics' not in groups.keys() }}"
+
+
+- hosts: metrics
   become: yes
   become_user: root
   handlers:
@@ -17,7 +72,7 @@
       notify: restart nginx
 
 
-- hosts: master
+- hosts: metrics
   become: yes
   become_user: root
   handlers:
@@ -42,6 +97,14 @@
       become: yes
       become_user: root
       tags: ['restart', 'restart_graphite']
+
+    - service:
+        name: uwsgi
+        state: restarted
+      become: yes
+      become_user: root
+      tags: ['restart', 'restart_graphite', 'restart_uwsgi']
+
 
     - service:
         name: grafana-server

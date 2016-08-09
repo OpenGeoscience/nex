@@ -4,8 +4,15 @@
     - { role: generate_users, tags: [ "users", "provision", "provision_users"] }
     - { role: nfs, tags: ["nfs", "provision", "provision_nfs"] }
     - { role: hdfs, tags: ["hdfs", "provision", "provision_hdfs"] }
-    - { role: spark, tags: ["spark", "provision", "provision_spark"] }
-
+    - role: spark
+      spark_version: 1.6.1
+      ags: ["spark", "provision", "provision_spark"]
+    - role: spark
+      spark_version: 2.0.0
+      tags: ["spark", "provision", "provision_spark"]
+    - role: spark-git
+      spark_git_version: branch-2.0
+      tags: ["spark", "provision", "provision_spark"]
 
 - name: Provision the regular nodes
   hosts: nodes
@@ -13,11 +20,20 @@
     - { role: generate_users, tags: ["users", "provision", "provision_users"] }
     - { role: nfs, tags: ["nfs", "provision", "provision_nfs"] }
     - { role: hdfs, tags: ["hdfs", "provision", "provision_hdfs"] }
-    - { role: spark, tags: ["spark", "provision", "provision_spark"] }
-
+    - role: spark
+      spark_version: 1.6.1
+      ags: ["spark", "provision", "provision_spark"]
+    - role: spark
+      spark_version: 2.0.0
+      tags: ["spark", "provision", "provision_spark"]
+    - role: spark-git
+      spark_git_version: branch-2.0
+      tags: ["spark", "provision", "provision_spark"]
 
 - name: Start services and daemons on master node
   hosts: master
+  vars:
+    spark_version: 2.0.0
   tasks:
     - name: Start/Restart NFS service
       service:

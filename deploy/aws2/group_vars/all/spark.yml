@@ -7,7 +7,7 @@ spark_download_dir: /public
 spark_base_dir: /opt
 
 # The version of spark to download
-spark_version: 1.6.1
+# spark_version: 1.6.1
 
 # spark's home directory
 spark_home: "{{ spark_base_dir }}/spark/{{ spark_version }}"
