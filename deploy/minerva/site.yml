@@ -54,6 +54,20 @@
       become: yes
       become_user: root
 
+
+- hosts: rabbitmq
+  roles:
+    - role: cumulus
+      tags:
+        - cumulus
+
+    - role: celery
+      celery_user: "{{ cumulus_celery_user }}"
+      celery_group: "{{ cumulus_celery_user }}"
+      celery_app: "cumulus"
+      celery_app_dir: "{{ cumulus_install_root }}"
+
+
 - name: Configure girder
   hosts: girder
   vars:
@@ -161,15 +175,3 @@
       become_user: "{{ girder_user }}"
       tags:
         - config
-
-- hosts: rabbitmq
-  roles:
-    - role: cumulus
-      tags:
-        - cumulus
-
-    - role: celery
-      celery_user: "{{ cumulus_celery_user }}"
-      celery_group: "{{ cumulus_celery_user }}"
-      celery_app: "cumulus"
-      celery_app_dir: "{{ cumulus_install_root }}"

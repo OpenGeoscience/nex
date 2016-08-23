@@ -13,3 +13,5 @@ cumulus_repo: "https://github.com/Kitware/cumulus.git"
 
 cumulus_celery_user: "{{ ansible_user }}"
 cumulus_celery_group: "{{ cumulus_celery_user }}"
+
+cumulus_girder_plugins: []
