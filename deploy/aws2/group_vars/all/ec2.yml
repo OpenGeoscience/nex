@@ -1,0 +1,60 @@
+# Tag used to name and to ensure an exact count of master
+master_tag:
+  Name: "{{prefix}}_master"
+
+# Tag used to name and to ensure an exact count of nodes
+node_tag:
+  Name: "{{prefix}}_node"
+
+# This security group must exist - these scripts will not create it for you
+ec2_security_group: default
+
+# The region to launch instances in
+ec2_region: us-west-2
+
+# Set the key_name variable with this varialbe:
+# ec2_key_name: example-key
+
+# Set the instance profile name, uses IAM roles
+# See: http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html
+# ec2_instance_profile_name: example
+
+#########################
+# Master variables
+#
+
+ec2_master_ami: ami-e0f7e081
+ec2_master_instance_type: t2.micro
+
+# Add volumes by specifying ec2_master_volumes
+# ec2_master_volumes:
+#   - device_name: /dev/sda1
+#   - volume_size: 1000
+#   - etc...
+#
+# See: http://docs.ansible.com/ansible/ec2_module.html for more information
+
+
+# Additional ec2 tags may be set on master with the following variable
+# ec2_master_additional_tags:
+#   example: tag
+
+
+#########################
+# Node variables
+#
+ec2_node_ami: ami-e0f7e081
+ec2_node_instance_type: t2.micro
+ec2_node_count: 1
+
+# Additional ec2 tags may be set on nodes with the following variable
+# ec2_node_additional_tags:
+#   example: tag
+
+# Add volumes by specifying ec2_node_volumes
+# ec2_node_volumes:
+#   - device_name: /dev/sda1
+#   - volume_size: 1000
+#   - etc...
+#
+# See: http://docs.ansible.com/ansible/ec2_module.html for more information

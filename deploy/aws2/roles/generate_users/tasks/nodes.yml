@@ -1,0 +1,8 @@
+---
+- name: Get public keys from master
+  set_fact:
+    master_public_keys: "{{ hostvars[groups[master_group_name][0]]['user_public_keys']  }}"
+
+
+- include: users.yml
+  with_dict: "{{ master_public_keys|default({})}}"

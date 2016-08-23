@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    # Make sure we have access to other nodes as data-01, data-02, etc
+    - lineinfile:
+        dest: /etc/hosts
+        create: true
+        line: "{{ hostvars[item]['private_ip'] }} {{ hostvars[item]['fqdn'] }} {{ item }}"
+      with_items: "{{ play_hosts }}"
+
+    # Make sure vagrant added line in /etc/hosts is not present
+    - lineinfile:
+        dest: /etc/hosts
+        regexp: '^127.0.1.1'
+        state: absent

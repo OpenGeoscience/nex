@@ -1,0 +1,125 @@
+---
+- name: Set facts about Master
+  set_fact:
+    master_hostname: "{{ groups[master_group_name][0] }}"
+    master_private_ip: "{{ hostvars[groups[master_group_name][0]]['private_ip'] }}"
+  tags:
+    - update_hdfs_configs
+
+- name: Add Oracle repository
+  apt_repository:
+    repo: ppa:webupd8team/java
+  become: yes
+  become_user: root
+
+- name: Update APT
+  apt:
+    update_cache: yes
+  become: yes
+  become_user: root
+
+# https://coderwall.com/p/zzdapg/ansible-recipe-to-install-java-7-selecting-the-oracle-license
+- name: Automatically select the Oracle License
+  shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+  become: yes
+  become_user: root
+
+
+- name: Install HDFS System dependencies
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - rsync
+    - oracle-java7-installer
+  become: yes
+  become_user: root
+
+- name: Change ownership of hadoop_base_dir
+  file:
+    path: "{{ hadoop_base_dir }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: yes
+  become_user: root
+
+
+- name: Globally disable host key checking
+  lineinfile:
+    dest: "/etc/ssh/ssh_config"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - regexp: "#   StrictHostKeyChecking ask"
+      line: "    StrictHostKeyChecking no"
+  become: yes
+  become_user: root
+
+- name: Download Hadoop
+  get_url:
+    url: "http://shinyfeather.com/hadoop/common/hadoop-{{ hadoop_version }}/hadoop-{{ hadoop_version }}.tar.gz"
+    dest: "{{ hadoop_download_dir }}/hadoop-{{ hadoop_version }}.tar.gz"
+    force: no
+
+
+- name: Create hadoop_home directory
+  file:
+    path: "{{ hadoop_home }}/"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    state: directory
+
+# Note: Unarchive module does not support strip-components
+- name: Unarchive Hadoop
+  shell: >-
+    tar -xzf
+    {{ hadoop_download_dir }}/hadoop-{{ hadoop_version }}.tar.gz
+    -C {{ hadoop_home }}/
+    --strip-components=1
+  args:
+    creates: "{{ hadoop_home }}/etc/hadoop/hadoop-env.sh"
+
+- name: Setup JAVA_HOME
+  lineinfile:
+    dest: "{{ hadoop_home }}/etc/hadoop/hadoop-env.sh"
+    regexp: "^export JAVA_HOME="
+    line: "export JAVA_HOME=/usr/lib/jvm/java-7-oracle"
+
+
+- name: Copy Hadoop Config files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - src: "hdfs-site.xml.j2"
+      dest: "{{ hadoop_config }}/hdfs-site.xml"
+    - src: "core-site.xml.j2"
+      dest: "{{ hadoop_config }}/core-site.xml"
+    - src: "yarn-site.xml.j2"
+      dest: "{{ hadoop_config }}/yarn-site.xml"
+    - src: "mapred-site.xml.j2"
+      dest: "{{ hadoop_config }}/mapred-site.xml"
+    - src: "slaves.j2"
+      dest: "{{ hadoop_config }}/slaves"
+  tags:
+    - update_hdfs_configs
+
+- name: Create Data directory
+  file:
+    path: "{{ hadoop_dfs_root }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    recurse: yes
+    state: directory
+  become: yes
+  become_user: root
+
+
+
+- name: Run master tasks
+  include: master.yml
+  when: inventory_hostname in groups["{{ master_group_name }}"]
+#
+# - name: Run node tasks
+#   include: nodes.yml
+#   when: inventory_hostname not in groups["{{ hdfs_master_group_name }}"]
