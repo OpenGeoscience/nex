@@ -6,7 +6,6 @@
   become: yes
   become_user: root
 
-
 # Note - this has to be fixed, technically we don't have
 # access to girder_user except through the playbook
 - name: Create virtualenv directory
